@@ -10,14 +10,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
+	"strconv"
 )
 
 var answerStudents = widget.NewLabel("")
 var answerGroups = widget.NewLabel("")
+var db, err = sql.Open("sqlserver", "server=localhost;user id=Artem;password=sql12345678;database=Students;encrypt=disable")
 
 func main() {
 	w := App()
-	db, err := sql.Open("sqlserver", "server=localhost;user id=Artem;password=sql12345678;database=Students;encrypt=disable")
 	if err != nil {
 		log.Fatal("Ошибка при открытии соединения: ", err.Error())
 		return
@@ -48,6 +49,15 @@ func App() fyne.Window {
 
 	label1 := widget.NewLabel("Удалить ученика")
 	entry1 := widget.NewEntry()
+	btn1 := widget.NewButton("Удалить", func() {
+		n, err := strconv.Atoi(entry1.Text)
+		if err != nil {
+			panic(err)
+		}
+		DeleteStudent(db, n)
+	})
+	label2 := widget.NewLabel("Добавить ученика")
+	entry2 := widget.NewEntry()
 
 	w.SetContent(container.NewHBox(
 		scrStudents,
@@ -55,6 +65,9 @@ func App() fyne.Window {
 		container.NewVBox(
 			label1,
 			entry1,
+			btn1,
+			label2,
+			entry2,
 		),
 	))
 
