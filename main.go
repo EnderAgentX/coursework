@@ -5,27 +5,46 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
 )
 
+var answer = widget.NewLabel("")
+
 func main() {
-	App()
+	w := App()
 	db, err := sql.Open("sqlserver", "server=localhost;user id=Artem;password=sql12345678;database=Students;encrypt=disable")
 	if err != nil {
 		log.Fatal("Ошибка при открытии соединения: ", err.Error())
 		return
 	}
+	AddText(answer, "Ученики")
 	ReadPhone(db)
+	AddText(answer, "Группы")
 	ReadGroup(db)
+	w.ShowAndRun()
 	defer db.Close()
 }
 
-func App() {
+func AddText(ans *widget.Label, text string) {
+	ans.Text = ans.Text + text + "\n"
+	ans.SetText(ans.Text)
+}
+
+func App() fyne.Window {
 	newApp := app.New()
-	w := newApp.NewWindow("Метод Гаусса")
-	w.Resize(fyne.NewSize(300, 600))
+	w := newApp.NewWindow("Курсовая работа")
+	w.Resize(fyne.NewSize(1200, 600))
 	w.CenterOnScreen()
+	scr := container.NewVScroll(answer)
+	scr.SetMinSize(fyne.NewSize(300, 600))
+	w.SetContent(container.NewVBox(
+		scr,
+	))
+
+	return w
 }
 
 func ReadPhone(db *sql.DB) {
@@ -41,7 +60,7 @@ func ReadPhone(db *sql.DB) {
 		if err := rows.Scan(&id, &name, &phone); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Id: %d, Name: %s, Phone: %s\n", id, name, phone)
+		AddText(answer, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", id, name, phone))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
@@ -61,7 +80,7 @@ func ReadGroup(db *sql.DB) {
 		if err := rows.Scan(&id, &group); err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Id: %d, Group: %s\n", id, group)
+		AddText(answer, fmt.Sprintf("Id: %d, Group: %s\n", id, group))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
