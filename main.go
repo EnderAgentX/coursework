@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"fyne.io/fyne/v2"
@@ -11,7 +12,8 @@ import (
 	"log"
 )
 
-var answer = widget.NewLabel("")
+var answerStudents = widget.NewLabel("")
+var answerGroups = widget.NewLabel("")
 
 func main() {
 	w := App()
@@ -20,10 +22,11 @@ func main() {
 		log.Fatal("Ошибка при открытии соединения: ", err.Error())
 		return
 	}
-	AddText(answer, "Ученики")
-	ReadPhone(db)
-	AddText(answer, "Группы")
+	AddText(answerStudents, "Ученики")
+	ReadStudents(db)
+	AddText(answerGroups, "Группы")
 	ReadGroup(db)
+	DeleteStudent(db, 2)
 	w.ShowAndRun()
 	defer db.Close()
 }
@@ -38,18 +41,38 @@ func App() fyne.Window {
 	w := newApp.NewWindow("Курсовая работа")
 	w.Resize(fyne.NewSize(1200, 600))
 	w.CenterOnScreen()
-	scr := container.NewVScroll(answer)
-	scr.SetMinSize(fyne.NewSize(300, 600))
-	w.SetContent(container.NewVBox(
-		scr,
+	scrStudents := container.NewVScroll(answerStudents)
+	scrGroups := container.NewVScroll(answerGroups)
+	scrStudents.SetMinSize(fyne.NewSize(300, 600))
+	scrGroups.SetMinSize(fyne.NewSize(300, 600))
+
+	label1 := widget.NewLabel("Удалить ученика")
+	entry1 := widget.NewEntry()
+
+	w.SetContent(container.NewHBox(
+		scrStudents,
+		scrGroups,
+		container.NewVBox(
+			label1,
+			entry1,
+		),
 	))
 
 	return w
 }
 
-func ReadPhone(db *sql.DB) {
+func ReadStudents(db *sql.DB) {
 	var id int
 	var name, phone string
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	answerStudents.Text = ""
 	count := 0
 	query := "SELECT Id, FullName, Phone FROM Student"
 	rows, err := db.Query(query)
@@ -60,7 +83,7 @@ func ReadPhone(db *sql.DB) {
 		if err := rows.Scan(&id, &name, &phone); err != nil {
 			log.Fatal(err)
 		}
-		AddText(answer, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", id, name, phone))
+		AddText(answerStudents, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", id, name, phone))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
@@ -70,9 +93,16 @@ func ReadPhone(db *sql.DB) {
 func ReadGroup(db *sql.DB) {
 	var id int
 	var group string
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
 	count := 0
 	query := "SELECT Id, GroupName FROM StudyGroup"
-	rows, err := db.Query(query)
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,9 +110,26 @@ func ReadGroup(db *sql.DB) {
 		if err := rows.Scan(&id, &group); err != nil {
 			log.Fatal(err)
 		}
-		AddText(answer, fmt.Sprintf("Id: %d, Group: %s\n", id, group))
+		AddText(answerGroups, fmt.Sprintf("Id: %d, Group: %s\n", id, group))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
+}
+
+func DeleteStudent(db *sql.DB, id int) {
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "DELETE FROM Student WHERE Id = @Id"
+	_, err = db.ExecContext(ctx, query, sql.Named("Id", id))
+	if err != nil {
+		panic(err)
+	}
+	ReadStudents(db)
 }
