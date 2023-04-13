@@ -13,6 +13,14 @@ import (
 	"strconv"
 )
 
+type Student struct {
+	id    int
+	name  string
+	phone string
+}
+
+var arrStudents []Student
+
 var answerStudents = widget.NewLabel("")
 var answerGroups = widget.NewLabel("")
 var db, err = sql.Open("sqlserver", "server=localhost;user id=Artem;password=sql12345678;database=Students;encrypt=disable")
@@ -27,7 +35,6 @@ func main() {
 	ReadStudents(db)
 	AddText(answerGroups, "Группы")
 	ReadGroup(db)
-	DeleteStudent(db, 2)
 	w.ShowAndRun()
 	defer db.Close()
 }
@@ -42,7 +49,20 @@ func App() fyne.Window {
 	w := newApp.NewWindow("Курсовая работа")
 	w.Resize(fyne.NewSize(1200, 600))
 	w.CenterOnScreen()
-	scrStudents := container.NewVScroll(answerStudents)
+
+	list := widget.NewList(
+		func() int {
+			return len(arrStudents)
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(idList widget.ListItemID, obj fyne.CanvasObject) {
+			obj.(*widget.Label).SetText(arrStudents[idList].name)
+		},
+	)
+
+	scrStudents := container.NewVScroll(list)
 	scrGroups := container.NewVScroll(answerGroups)
 	scrStudents.SetMinSize(fyne.NewSize(300, 600))
 	scrGroups.SetMinSize(fyne.NewSize(300, 600))
@@ -50,6 +70,7 @@ func App() fyne.Window {
 	label1 := widget.NewLabel("Удалить ученика")
 	entry1 := widget.NewEntry()
 	btn1 := widget.NewButton("Удалить", func() {
+		//TODO list.OnSelected(id)
 		n, err := strconv.Atoi(entry1.Text)
 		if err != nil {
 			panic(err)
@@ -61,7 +82,6 @@ func App() fyne.Window {
 
 	w.SetContent(container.NewHBox(
 		scrStudents,
-		scrGroups,
 		container.NewVBox(
 			label1,
 			entry1,
@@ -74,9 +94,11 @@ func App() fyne.Window {
 	return w
 }
 
-func ReadStudents(db *sql.DB) {
+func ReadStudents(db *sql.DB) []Student {
 	var id int
 	var name, phone string
+	var st Student
+	arrStudents = nil
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -96,11 +118,14 @@ func ReadStudents(db *sql.DB) {
 		if err := rows.Scan(&id, &name, &phone); err != nil {
 			log.Fatal(err)
 		}
-		AddText(answerStudents, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", id, name, phone))
+		st.id, st.name, st.phone = id, name, phone
+		arrStudents = append(arrStudents, st)
+		AddText(answerStudents, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", st.id, st.name, st.phone))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
+	return arrStudents
 }
 
 func ReadGroup(db *sql.DB) {
