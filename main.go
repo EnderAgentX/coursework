@@ -61,7 +61,19 @@ func App() fyne.Window {
 			obj.(*widget.Label).SetText(arrStudents[idList].name)
 		},
 	)
-
+	ListId := widget.NewLabel("Id:")
+	ListName := widget.NewLabel("Имя:")
+	ListPhone := widget.NewLabel("Телефон:")
+	var st Student
+	list.OnSelected = func(idList widget.ListItemID) {
+		st.id, st.name, st.phone = arrStudents[idList].id, arrStudents[idList].name, arrStudents[idList].phone
+		ListId.Text = "Id: " + strconv.Itoa(st.id)
+		ListName.Text = "Имя: " + st.name
+		ListPhone.Text = "Телефон: " + st.phone
+		ListId.Refresh()
+		ListName.Refresh()
+		ListPhone.Refresh()
+	}
 	scrStudents := container.NewVScroll(list)
 	scrGroups := container.NewVScroll(answerGroups)
 	scrStudents.SetMinSize(fyne.NewSize(300, 600))
@@ -70,7 +82,6 @@ func App() fyne.Window {
 	label1 := widget.NewLabel("Удалить ученика")
 	entry1 := widget.NewEntry()
 	btn1 := widget.NewButton("Удалить", func() {
-		//TODO list.OnSelected(id)
 		n, err := strconv.Atoi(entry1.Text)
 		if err != nil {
 			panic(err)
@@ -82,12 +93,16 @@ func App() fyne.Window {
 
 	w.SetContent(container.NewHBox(
 		scrStudents,
+		scrGroups,
 		container.NewVBox(
 			label1,
 			entry1,
 			btn1,
 			label2,
 			entry2,
+			ListId,
+			ListName,
+			ListPhone,
 		),
 	))
 
