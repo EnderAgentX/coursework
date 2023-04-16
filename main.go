@@ -99,6 +99,12 @@ func App() fyne.Window {
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
 	label2 := widget.NewLabel("Добавить ученика")
+	buttonComfirm := widget.NewButton("Добавить", func() {
+		name := entryName.Text
+		phone := entryPhone.Text
+		AddStudent(db, name, phone)
+	})
+
 	btn2 := widget.NewButton("Добавить", func() {
 		dialog.ShowCustom("Добавить пользователя", "Закрыть",
 			container.NewVBox(
@@ -107,11 +113,7 @@ func App() fyne.Window {
 				entryName,
 				widget.NewLabel("Телефон"),
 				entryPhone,
-				widget.NewButton("Добавить", func() {
-					name := entryName.Text
-					phone := entryPhone.Text
-					AddStudent(db, name, phone)
-				}),
+				buttonComfirm,
 			), w)
 	})
 
@@ -149,8 +151,12 @@ func AddStudent(db *sql.DB, name, phone string) {
 		panic(err)
 	}
 	defer rows.Close()
-	//TODO rows.QueryRowContext()
-
+	rows.QueryRowContext(
+		ctx,
+		sql.Named("Name", name),
+		sql.Named("Phone", phone),
+		sql.Named("GroupId", 2))
+	ReadStudents(db)
 }
 
 func ReadStudents(db *sql.DB) []Student {
