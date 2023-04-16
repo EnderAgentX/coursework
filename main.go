@@ -86,20 +86,29 @@ func App() fyne.Window {
 	btn1 := widget.NewButton("Удалить", func() {
 		DeleteStudent(db, delId)
 		scrStudents.Refresh()
+		ListId.Refresh()
+		ListName.Refresh()
+		ListPhone.Refresh()
+		//TODO Очистка поля после удаления
 	})
 
 	//btn1 := widget.NewButton("Удалить", getDelId())
-
+	entryName := widget.NewEntry()
+	entryPhone := widget.NewEntry()
 	label2 := widget.NewLabel("Добавить ученика")
 	btn2 := widget.NewButton("Добавить", func() {
 		dialog.ShowCustom("Добавить пользователя", "Закрыть",
 			container.NewVBox(
 				widget.NewLabel("Добавить ученика"),
 				widget.NewLabel("ФИО"),
-				widget.NewEntry(),
+				entryName,
 				widget.NewLabel("Телефон"),
-				widget.NewEntry(),
-				widget.NewButton("Добавить", func() { fmt.Println("1") }),
+				entryPhone,
+				widget.NewButton("Добавить", func() {
+					name := entryName.Text
+					phone := entryPhone.Text
+					AddStudent(db, name, phone)
+				}),
 			), w)
 	})
 
@@ -118,6 +127,11 @@ func App() fyne.Window {
 	))
 
 	return w
+}
+
+func AddStudent(db *sql.DB, name, phone string) {
+	fmt.Println(name)
+	fmt.Println(phone)
 }
 
 func ReadStudents(db *sql.DB) []Student {
