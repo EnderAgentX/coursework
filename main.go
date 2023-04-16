@@ -86,10 +86,13 @@ func App() fyne.Window {
 	btn1 := widget.NewButton("Удалить", func() {
 		DeleteStudent(db, delId)
 		scrStudents.Refresh()
+		ListId.Text = "Id: "
+		ListName.Text = "Имя: "
+		ListPhone.Text = "Телефон: "
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
-		//TODO Очистка поля после удаления
+		//TODO fix len label
 	})
 
 	//btn1 := widget.NewButton("Удалить", getDelId())
@@ -132,6 +135,22 @@ func App() fyne.Window {
 func AddStudent(db *sql.DB, name, phone string) {
 	fmt.Println(name)
 	fmt.Println(phone)
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "INSERT INTO Student (FullName, Phone, GroupId) VALUES (@Name, @Phone, @GroupId); select isNull(SCOPE_IDENTITY(), -1);"
+	rows, err := db.Prepare(query)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	//TODO rows.QueryRowContext()
+
 }
 
 func ReadStudents(db *sql.DB) []Student {
@@ -165,6 +184,7 @@ func ReadStudents(db *sql.DB) []Student {
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
+
 	return arrStudents
 }
 
