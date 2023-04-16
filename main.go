@@ -99,6 +99,7 @@ func App() fyne.Window {
 				widget.NewEntry(),
 				widget.NewLabel("Телефон"),
 				widget.NewEntry(),
+				widget.NewButton("Добавить", func() { fmt.Println("1") }),
 			), w)
 	})
 
