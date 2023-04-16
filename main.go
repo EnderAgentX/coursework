@@ -7,6 +7,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
@@ -65,11 +66,13 @@ func App() fyne.Window {
 	ListName := widget.NewLabel("Имя:")
 	ListPhone := widget.NewLabel("Телефон:")
 	var st Student
+	var delId int
 	list.OnSelected = func(idList widget.ListItemID) {
 		st.id, st.name, st.phone = arrStudents[idList].id, arrStudents[idList].name, arrStudents[idList].phone
 		ListId.Text = "Id: " + strconv.Itoa(st.id)
 		ListName.Text = "Имя: " + st.name
 		ListPhone.Text = "Телефон: " + st.phone
+		delId = arrStudents[idList].id
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
@@ -80,26 +83,33 @@ func App() fyne.Window {
 	scrGroups.SetMinSize(fyne.NewSize(300, 600))
 
 	label1 := widget.NewLabel("Удалить ученика")
-	entry1 := widget.NewEntry()
 	btn1 := widget.NewButton("Удалить", func() {
-		n, err := strconv.Atoi(entry1.Text)
-		if err != nil {
-			panic(err)
-		}
-		DeleteStudent(db, n)
+		DeleteStudent(db, delId)
+		scrStudents.Refresh()
 	})
+
+	//btn1 := widget.NewButton("Удалить", getDelId())
+
 	label2 := widget.NewLabel("Добавить ученика")
-	entry2 := widget.NewEntry()
+	btn2 := widget.NewButton("Добавить", func() {
+		dialog.ShowCustom("Добавить пользователя", "Закрыть",
+			container.NewVBox(
+				widget.NewLabel("Добавить ученика"),
+				widget.NewLabel("ФИО"),
+				widget.NewEntry(),
+				widget.NewLabel("Телефон"),
+				widget.NewEntry(),
+			), w)
+	})
 
 	w.SetContent(container.NewHBox(
 		scrStudents,
 		scrGroups,
 		container.NewVBox(
 			label1,
-			entry1,
 			btn1,
 			label2,
-			entry2,
+			btn2,
 			ListId,
 			ListName,
 			ListPhone,
@@ -170,7 +180,7 @@ func ReadGroup(db *sql.DB) {
 	defer rows.Close()
 }
 
-func DeleteStudent(db *sql.DB, id int) {
+func DeleteStudent(db *sql.DB, delId int) {
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -180,7 +190,7 @@ func DeleteStudent(db *sql.DB, id int) {
 	}
 
 	query := "DELETE FROM Student WHERE Id = @Id"
-	_, err = db.ExecContext(ctx, query, sql.Named("Id", id))
+	_, err = db.ExecContext(ctx, query, sql.Named("Id", delId))
 	if err != nil {
 		panic(err)
 	}
