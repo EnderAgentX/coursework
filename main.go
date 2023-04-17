@@ -133,6 +133,7 @@ func App() fyne.Window {
 		ListName.Text = "Имя: "
 		ListPhone.Text = "Телефон: "
 		listStudents.UnselectAll()
+		delStudentId = 0
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
@@ -147,6 +148,7 @@ func App() fyne.Window {
 		listStudents.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
+		delGroupId = 0
 	})
 
 	entryName := widget.NewEntry()
