@@ -104,8 +104,9 @@ func App() fyne.Window {
 		ListPhone.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
-		delStudentId = arrGroups[idList].id
+		delGroupId = arrGroups[idList].id
 		ReadSelectedGroup(db, delGroupId)
+		listStudents.UnselectAll()
 		listStudents.Refresh()
 	}
 
@@ -117,13 +118,22 @@ func App() fyne.Window {
 	cardGroups := widget.NewCard("Группы", "", nil)
 	cardStudents.Resize(fyne.NewSize(300, 300))
 
-	labelDelStudent := widget.NewLabel("Удалить ученика")
+	labelDelStudent := widget.NewLabel("Удалить студента")
 	btnDelStudent := widget.NewButton("Удалить", func() {
+		fmt.Println(delStudentId)
 		DeleteStudent(db, delStudentId)
+		if delGroupId == 0 {
+			ReadGroup(db)
+		} else {
+			ReadSelectedGroup(db, delGroupId)
+		}
+
 		scrStudents.Refresh()
+		listStudents.Refresh()
 		ListId.Text = "Id: "
 		ListName.Text = "Имя: "
 		ListPhone.Text = "Телефон: "
+		listStudents.UnselectAll()
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
@@ -131,10 +141,16 @@ func App() fyne.Window {
 
 	})
 
+	labelDelGroup := widget.NewLabel("Удалить группу")
 	btnDelGroup := widget.NewButton("Удалить", func() {
+		fmt.Println(delGroupId)
 		DeleteGroup(db, w, delGroupId)
 		scrGroups.Refresh()
+		listStudents.Refresh()
+		listGroups.UnselectAll()
+		listStudents.UnselectAll()
 	})
+
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
 	labelAddStudent := widget.NewLabel("Добавить ученика")
@@ -157,8 +173,6 @@ func App() fyne.Window {
 			), w)
 
 	})
-
-	labelDelGroup := widget.NewLabel("Удалить группу")
 
 	w.SetContent(container.NewHBox(
 		container.NewVBox(
@@ -331,7 +345,7 @@ func DeleteStudent(db *sql.DB, delId int) {
 func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 	ctx := context.Background()
 	var cnt int
-
+	fmt.Println(delId)
 	// Проверка работает ли база
 	err := db.PingContext(ctx)
 	if err != nil {
@@ -355,13 +369,14 @@ func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 		if err != nil {
 			panic(err)
 		}
+		ReadGroup(db)
 		ReadStudents(db)
 	} else {
+		fmt.Println("Ошибка, удалите всех студентов!")
 		dialog.ShowError(
-			errors.New("невозможно удалить группу. Необходимо удалить всех студентов из группы"),
+			errors.New("Невозможно удалить группу. Необходимо удалить всех студентов из группы"),
 			w,
 		)
-		fmt.Println("Ошибка, удалите всех студентов!")
-	}
 
+	}
 }
