@@ -118,8 +118,7 @@ func App() fyne.Window {
 	cardGroups := widget.NewCard("Группы", "", nil)
 	cardStudents.Resize(fyne.NewSize(300, 300))
 
-	labelDelStudent := widget.NewLabel("Удалить студента")
-	btnDelStudent := widget.NewButton("Удалить", func() {
+	btnDelStudent := widget.NewButton("Удалить студента", func() {
 		fmt.Println(delStudentId)
 		DeleteStudent(db, delStudentId)
 		if delGroupId == 0 {
@@ -141,8 +140,7 @@ func App() fyne.Window {
 
 	})
 
-	labelDelGroup := widget.NewLabel("Удалить группу")
-	btnDelGroup := widget.NewButton("Удалить", func() {
+	btnDelGroup := widget.NewButton("Удалить группу", func() {
 		fmt.Println(delGroupId)
 		DeleteGroup(db, w, delGroupId)
 		scrGroups.Refresh()
@@ -153,12 +151,16 @@ func App() fyne.Window {
 
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
-	labelAddStudent := widget.NewLabel("Добавить ученика")
-	buttonComfirm := widget.NewButton("Добавить", func() {
+	buttonComfirm := widget.NewButton("Добавить ученика", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
 		AddStudent(db, name, phone)
-
+		if delGroupId == 0 {
+			ReadGroup(db)
+		} else {
+			ReadSelectedGroup(db, delGroupId)
+		}
+		scrStudents.Refresh()
 	})
 
 	btnAddStudent := widget.NewButton("Добавить", func() {
@@ -173,31 +175,36 @@ func App() fyne.Window {
 			), w)
 
 	})
-
-	w.SetContent(container.NewHBox(
-		container.NewVBox(
-			cardStudents,
-			scrStudents,
-		),
-		container.NewVBox(
-			cardGroups,
-			scrGroups,
-		),
-
-		container.NewVBox(
-			labelDelStudent,
-			btnDelStudent,
-			labelAddStudent,
-			btnAddStudent,
+	boxActions := container.NewVBox(
+		widget.NewCard("Действия", "", nil),
+		widget.NewCard("", "", container.NewHBox(
+			container.NewVBox(
+				btnDelStudent,
+				btnAddStudent,
+			),
+			container.NewVBox(
+				btnDelGroup,
+			),
+		)),
+		widget.NewCard("", "", container.NewVBox(
 			ListId,
 			ListName,
 			ListPhone,
-		),
-		container.NewVBox(
-			labelDelGroup,
-			btnDelGroup,
-		),
-	))
+		)),
+	)
+
+	w.SetContent(
+		container.NewHBox(
+			container.NewVBox(
+				cardStudents,
+				scrStudents,
+			),
+			container.NewVBox(
+				cardGroups,
+				scrGroups,
+			),
+			boxActions,
+		))
 
 	return w
 }
