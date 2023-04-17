@@ -153,7 +153,7 @@ func App() fyne.Window {
 
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
-	buttonComfirm := widget.NewButton("Добавить ученика", func() {
+	buttonComfirm := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
 		AddStudent(db, name, phone)
@@ -164,18 +164,33 @@ func App() fyne.Window {
 		}
 		scrStudents.Refresh()
 	})
+	WindowAddStudent := dialog.NewCustom("Добавить студента", "Закрыть",
+		container.NewVBox(
+			widget.NewLabel("Добавить ученика"),
+			widget.NewLabel("ФИО"),
+			entryName,
+			widget.NewLabel("Номер телефона"),
+			entryPhone,
+			buttonComfirm,
+		), w)
 
-	btnAddStudent := widget.NewButton("Добавить", func() {
-		dialog.ShowCustom("Добавить пользователя", "Закрыть",
+	WindowAddStudent.Resize(fyne.NewSize(300, 200))
+
+	btnAddStudent := widget.NewButton("Добавить студента", func() {
+		WindowAddStudent.Show()
+	})
+	btnAddStudent.Resize(fyne.NewSize(900, 500))
+	container.NewWithoutLayout(btnAddStudent)
+
+	btnAddGroup := widget.NewButton("Добавить группу", func() {
+		dialog.ShowCustom("Добавить группу", "Закрыть",
 			container.NewVBox(
-				widget.NewLabel("Добавить ученика"),
-				widget.NewLabel("ФИО"),
+				widget.NewLabel("Группа"),
 				entryName,
 				widget.NewLabel("Телефон"),
 				entryPhone,
 				buttonComfirm,
 			), w)
-
 	})
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
@@ -186,6 +201,7 @@ func App() fyne.Window {
 			),
 			container.NewVBox(
 				btnDelGroup,
+				btnAddGroup,
 			),
 		)),
 		widget.NewCard("", "", container.NewVBox(
