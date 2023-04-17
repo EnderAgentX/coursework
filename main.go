@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -90,21 +91,21 @@ func App() fyne.Window {
 	ListName := widget.NewLabel("Имя:")
 	ListPhone := widget.NewLabel("Телефон:")
 	var st Student
-	var delId int
+	var delStudentId int
+	var delGroupId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
 		st.id, st.name, st.phone = arrStudents[idList].id, arrStudents[idList].name, arrStudents[idList].phone
 		ListId.Text = "Id: " + strconv.Itoa(st.id)
 		ListName.Text = "Имя: " + st.name
 		ListPhone.Text = "Телефон: " + st.phone
-		delId = arrStudents[idList].id
+		delStudentId = arrStudents[idList].id
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
-		id := arrGroups[idList].id
-		ReadSelectedGroup(db, id)
-		DeleteGroup(db, id)
+		delStudentId = arrGroups[idList].id
+		ReadSelectedGroup(db, delGroupId)
 		listStudents.Refresh()
 	}
 
@@ -116,9 +117,9 @@ func App() fyne.Window {
 	cardGroups := widget.NewCard("Группы", "", nil)
 	cardStudents.Resize(fyne.NewSize(300, 300))
 
-	label1 := widget.NewLabel("Удалить ученика")
-	btn1 := widget.NewButton("Удалить", func() {
-		DeleteStudent(db, delId)
+	labelDelStudent := widget.NewLabel("Удалить ученика")
+	btnDelStudent := widget.NewButton("Удалить", func() {
+		DeleteStudent(db, delStudentId)
 		scrStudents.Refresh()
 		ListId.Text = "Id: "
 		ListName.Text = "Имя: "
@@ -130,10 +131,13 @@ func App() fyne.Window {
 
 	})
 
-	//btn1 := widget.NewButton("Удалить", getDelId())
+	btnDelGroup := widget.NewButton("Удалить", func() {
+		DeleteGroup(db, w, delGroupId)
+		scrGroups.Refresh()
+	})
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
-	label2 := widget.NewLabel("Добавить ученика")
+	labelAddStudent := widget.NewLabel("Добавить ученика")
 	buttonComfirm := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
@@ -141,7 +145,7 @@ func App() fyne.Window {
 
 	})
 
-	btn2 := widget.NewButton("Добавить", func() {
+	btnAddStudent := widget.NewButton("Добавить", func() {
 		dialog.ShowCustom("Добавить пользователя", "Закрыть",
 			container.NewVBox(
 				widget.NewLabel("Добавить ученика"),
@@ -155,7 +159,6 @@ func App() fyne.Window {
 	})
 
 	labelDelGroup := widget.NewLabel("Удалить группу")
-	btnDelGroup := widget.NewButton("Удалить", nil)
 
 	w.SetContent(container.NewHBox(
 		container.NewVBox(
@@ -168,10 +171,10 @@ func App() fyne.Window {
 		),
 
 		container.NewVBox(
-			label1,
-			btn1,
-			label2,
-			btn2,
+			labelDelStudent,
+			btnDelStudent,
+			labelAddStudent,
+			btnAddStudent,
 			ListId,
 			ListName,
 			ListPhone,
@@ -325,7 +328,7 @@ func DeleteStudent(db *sql.DB, delId int) {
 	ReadStudents(db)
 }
 
-func DeleteGroup(db *sql.DB, delId int) {
+func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 	ctx := context.Background()
 	var cnt int
 
@@ -347,14 +350,18 @@ func DeleteGroup(db *sql.DB, delId int) {
 		fmt.Println(cnt)
 	}
 	if cnt == 0 {
-		fmt.Println("Удаление")
+		queryDel := "DELETE FROM StudyGroup WHERE Id = @Id"
+		_, err = db.ExecContext(ctx, queryDel, sql.Named("Id", delId))
+		if err != nil {
+			panic(err)
+		}
+		ReadStudents(db)
 	} else {
-		fmt.Println("Ошибка")
+		dialog.ShowError(
+			errors.New("невозможно удалить группу. Необходимо удалить всех студентов из группы"),
+			w,
+		)
+		fmt.Println("Ошибка, удалите всех студентов!")
 	}
-	//query := "DELETE FROM StudyGroup WHERE Id = @Id"
-	//_, err = db.ExecContext(ctx, query, sql.Named("Id", delId))
-	//if err != nil {
-	//	panic(err)
-	//}
-	//ReadStudents(db)
+
 }
