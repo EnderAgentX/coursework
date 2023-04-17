@@ -11,6 +11,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
+	"os"
 	"strconv"
 )
 
@@ -20,24 +21,35 @@ type Student struct {
 	phone string
 }
 
+type Group struct {
+	id   int
+	name string
+}
+
 var arrStudents []Student
+var arrGroups []Group
 
 var answerStudents = widget.NewLabel("")
 var answerGroups = widget.NewLabel("")
+
 var db, err = sql.Open("sqlserver", "server=localhost;user id=Artem;password=sql12345678;database=Students;encrypt=disable")
 
 func main() {
+	os.Setenv("FYNE_THEME", "light")
 	w := App()
 	if err != nil {
 		log.Fatal("Ошибка при открытии соединения: ", err.Error())
 		return
 	}
-	AddText(answerStudents, "Ученики")
+
+	AddText(answerStudents, "Студенты")
+
 	ReadStudents(db)
 	AddText(answerGroups, "Группы")
 	ReadGroup(db)
 	w.ShowAndRun()
 	defer db.Close()
+
 }
 
 func AddText(ans *widget.Label, text string) {
@@ -46,12 +58,12 @@ func AddText(ans *widget.Label, text string) {
 }
 
 func App() fyne.Window {
-	newApp := app.New()
-	w := newApp.NewWindow("Курсовая работа")
+	myApp := app.New()
+	w := myApp.NewWindow("Курсовая работа")
 	w.Resize(fyne.NewSize(1200, 600))
 	w.CenterOnScreen()
 
-	list := widget.NewList(
+	listStudents := widget.NewList(
 		func() int {
 			return len(arrStudents)
 		},
@@ -62,12 +74,24 @@ func App() fyne.Window {
 			obj.(*widget.Label).SetText(arrStudents[idList].name)
 		},
 	)
+	listGroups := widget.NewList(
+		func() int {
+			return len(arrGroups)
+		},
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(idList widget.ListItemID, obj fyne.CanvasObject) {
+			obj.(*widget.Label).SetText(arrGroups[idList].name)
+		},
+	)
+
 	ListId := widget.NewLabel("Id:")
 	ListName := widget.NewLabel("Имя:")
 	ListPhone := widget.NewLabel("Телефон:")
 	var st Student
 	var delId int
-	list.OnSelected = func(idList widget.ListItemID) {
+	listStudents.OnSelected = func(idList widget.ListItemID) {
 		st.id, st.name, st.phone = arrStudents[idList].id, arrStudents[idList].name, arrStudents[idList].phone
 		ListId.Text = "Id: " + strconv.Itoa(st.id)
 		ListName.Text = "Имя: " + st.name
@@ -77,10 +101,20 @@ func App() fyne.Window {
 		ListName.Refresh()
 		ListPhone.Refresh()
 	}
-	scrStudents := container.NewVScroll(list)
-	scrGroups := container.NewVScroll(answerGroups)
+	listGroups.OnSelected = func(idList widget.ListItemID) {
+		id := arrGroups[idList].id
+		ReadSelectedGroup(db, id)
+		DeleteGroup(db, id)
+		listStudents.Refresh()
+	}
+
+	scrStudents := container.NewVScroll(listStudents)
+	scrGroups := container.NewVScroll(listGroups)
 	scrStudents.SetMinSize(fyne.NewSize(300, 600))
 	scrGroups.SetMinSize(fyne.NewSize(300, 600))
+	cardStudents := widget.NewCard("Студенты", "", nil)
+	cardGroups := widget.NewCard("Группы", "", nil)
+	cardStudents.Resize(fyne.NewSize(300, 300))
 
 	label1 := widget.NewLabel("Удалить ученика")
 	btn1 := widget.NewButton("Удалить", func() {
@@ -93,6 +127,7 @@ func App() fyne.Window {
 		ListName.Refresh()
 		ListPhone.Refresh()
 		//TODO fix len label
+
 	})
 
 	//btn1 := widget.NewButton("Удалить", getDelId())
@@ -103,6 +138,7 @@ func App() fyne.Window {
 		name := entryName.Text
 		phone := entryPhone.Text
 		AddStudent(db, name, phone)
+
 	})
 
 	btn2 := widget.NewButton("Добавить", func() {
@@ -115,11 +151,22 @@ func App() fyne.Window {
 				entryPhone,
 				buttonComfirm,
 			), w)
+
 	})
 
+	labelDelGroup := widget.NewLabel("Удалить группу")
+	btnDelGroup := widget.NewButton("Удалить", nil)
+
 	w.SetContent(container.NewHBox(
-		scrStudents,
-		scrGroups,
+		container.NewVBox(
+			cardStudents,
+			scrStudents,
+		),
+		container.NewVBox(
+			cardGroups,
+			scrGroups,
+		),
+
 		container.NewVBox(
 			label1,
 			btn1,
@@ -128,6 +175,10 @@ func App() fyne.Window {
 			ListId,
 			ListName,
 			ListPhone,
+		),
+		container.NewVBox(
+			labelDelGroup,
+			btnDelGroup,
 		),
 	))
 
@@ -175,7 +226,7 @@ func ReadStudents(db *sql.DB) []Student {
 	answerStudents.Text = ""
 	count := 0
 	query := "SELECT Id, FullName, Phone FROM Student"
-	rows, err := db.Query(query)
+	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -185,7 +236,6 @@ func ReadStudents(db *sql.DB) []Student {
 		}
 		st.id, st.name, st.phone = id, name, phone
 		arrStudents = append(arrStudents, st)
-		AddText(answerStudents, fmt.Sprintf("Id: %d, Name: %s, Phone: %s\n", st.id, st.name, st.phone))
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
@@ -194,9 +244,45 @@ func ReadStudents(db *sql.DB) []Student {
 	return arrStudents
 }
 
-func ReadGroup(db *sql.DB) {
+func ReadSelectedGroup(db *sql.DB, groupId int) []Student {
+	var id int
+	var name, phone string
+	var st Student
+	arrStudents = nil
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	answerStudents.Text = ""
+	count := 0
+	query := "SELECT Student.Id, FullName, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
+	rows, err := db.QueryContext(ctx, query, sql.Named("Group", groupId))
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		if err := rows.Scan(&id, &name, &phone); err != nil {
+			log.Fatal(err)
+		}
+		st.id, st.name, st.phone = id, name, phone
+		arrStudents = append(arrStudents, st)
+		count++
+	}
+	fmt.Printf("Read %d row(s) successfully.\n", count)
+	defer rows.Close()
+
+	return arrStudents
+}
+
+func ReadGroup(db *sql.DB) []Group {
 	var id int
 	var group string
+	var gr Group
+	arrGroups = nil
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -214,11 +300,12 @@ func ReadGroup(db *sql.DB) {
 		if err := rows.Scan(&id, &group); err != nil {
 			log.Fatal(err)
 		}
-		AddText(answerGroups, fmt.Sprintf("Id: %d, Group: %s\n", id, group))
-		count++
+		gr.id, gr.name = id, group
+		arrGroups = append(arrGroups, gr)
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
+	return arrGroups
 }
 
 func DeleteStudent(db *sql.DB, delId int) {
@@ -236,4 +323,38 @@ func DeleteStudent(db *sql.DB, delId int) {
 		panic(err)
 	}
 	ReadStudents(db)
+}
+
+func DeleteGroup(db *sql.DB, delId int) {
+	ctx := context.Background()
+	var cnt int
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "SELECT COUNT(Student.Id) FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
+	rows, err := db.QueryContext(ctx, query, sql.Named("Group", delId))
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		if err := rows.Scan(&cnt); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(cnt)
+	}
+	if cnt == 0 {
+		fmt.Println("Удаление")
+	} else {
+		fmt.Println("Ошибка")
+	}
+	//query := "DELETE FROM StudyGroup WHERE Id = @Id"
+	//_, err = db.ExecContext(ctx, query, sql.Named("Id", delId))
+	//if err != nil {
+	//	panic(err)
+	//}
+	//ReadStudents(db)
 }
