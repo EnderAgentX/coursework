@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"context"
@@ -88,7 +88,7 @@ func ReadStudents(db *sql.DB) []Student {
 		if err := rows.Scan(&id, &name, &phone); err != nil {
 			log.Fatal(err)
 		}
-		st.id, st.name, st.phone = id, name, phone
+		st.Id, st.Name, st.Phone = id, name, phone
 		arrStudents = append(arrStudents, st)
 		count++
 	}
@@ -122,7 +122,7 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []Student {
 		if err := rows.Scan(&id, &name, &phone); err != nil {
 			log.Fatal(err)
 		}
-		st.id, st.name, st.phone = id, name, phone
+		st.Id, st.Name, st.Phone = id, name, phone
 		arrStudents = append(arrStudents, st)
 		count++
 	}
@@ -154,7 +154,7 @@ func ReadGroup(db *sql.DB) []Group {
 		if err := rows.Scan(&id, &group); err != nil {
 			log.Fatal(err)
 		}
-		gr.id, gr.name = id, group
+		gr.Id, gr.Name = id, group
 		arrGroups = append(arrGroups, gr)
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
