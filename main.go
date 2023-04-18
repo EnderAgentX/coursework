@@ -153,7 +153,7 @@ func App() fyne.Window {
 
 	entryName := widget.NewEntry()
 	entryPhone := widget.NewEntry()
-	buttonComfirm := widget.NewButton("Добавить", func() {
+	buttonComfirmStudent := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
 		AddStudent(db, name, phone)
@@ -171,7 +171,7 @@ func App() fyne.Window {
 			entryName,
 			widget.NewLabel("Номер телефона"),
 			entryPhone,
-			buttonComfirm,
+			buttonComfirmStudent,
 		), w)
 
 	WindowAddStudent.Resize(fyne.NewSize(300, 200))
@@ -179,18 +179,23 @@ func App() fyne.Window {
 	btnAddStudent := widget.NewButton("Добавить студента", func() {
 		WindowAddStudent.Show()
 	})
-	btnAddStudent.Resize(fyne.NewSize(900, 500))
-	container.NewWithoutLayout(btnAddStudent)
 
+	entryGroup := widget.NewEntry()
+	buttonComfirmGroup := widget.NewButton("Добавить", func() {
+		name := entryGroup.Text
+		AddGroup(db, name)
+		scrGroups.Refresh()
+	})
+
+	WindowAddGroup := dialog.NewCustom("Добавить группу", "Закрыть",
+		container.NewVBox(
+			widget.NewLabel("Группа"),
+			entryGroup,
+			buttonComfirmGroup,
+		), w)
+	WindowAddGroup.Resize(fyne.NewSize(300, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
-		dialog.ShowCustom("Добавить группу", "Закрыть",
-			container.NewVBox(
-				widget.NewLabel("Группа"),
-				entryName,
-				widget.NewLabel("Телефон"),
-				entryPhone,
-				buttonComfirm,
-			), w)
+		WindowAddGroup.Show()
 	})
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
@@ -228,8 +233,6 @@ func App() fyne.Window {
 }
 
 func AddStudent(db *sql.DB, name, phone string) {
-	fmt.Println(name)
-	fmt.Println(phone)
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -250,6 +253,28 @@ func AddStudent(db *sql.DB, name, phone string) {
 		sql.Named("Phone", phone),
 		sql.Named("GroupId", 2))
 	ReadStudents(db)
+}
+
+func AddGroup(db *sql.DB, group string) {
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "INSERT INTO StudyGroup (GroupName) VALUES (@GroupName); select isNull(SCOPE_IDENTITY(), -1);"
+	rows, err := db.Prepare(query)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+	rows.QueryRowContext(
+		ctx,
+		sql.Named("GroupName", group),
+	)
+	ReadGroup(db)
 }
 
 func ReadStudents(db *sql.DB) []Student {
