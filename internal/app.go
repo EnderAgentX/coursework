@@ -99,11 +99,33 @@ func App() fyne.Window {
 
 	})
 
+	groups := func() []string {
+		ReadGroup(Db)
+		var s []string
+		for i := 0; i <= len(arrGroups)-1; i++ {
+			is := arrGroups[i].Name
+			s = append(s, is)
+		}
+		return s
+	}
+	var selGroupArr []string
+	selGroupArr = groups()
+	selectGroup := widget.NewSelect(selGroupArr, func(s string) {
+		fmt.Println(s)
+	})
+
+	selectGroup.PlaceHolder = "Группа"
+
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
 		fmt.Println(delGroupId)
 		DeleteGroup(Db, w, delGroupId)
 		scrGroups.Refresh()
 		listStudents.Refresh()
+		selGroupArr = groups()
+		selectGroup = widget.NewSelect(selGroupArr, func(s string) {
+			fmt.Println(s)
+		})
+		selectGroup.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
 		delGroupId = 0
@@ -117,26 +139,15 @@ func App() fyne.Window {
 		AddStudent(Db, w, name, phone, delGroupId)
 		if delGroupId == 0 {
 			ReadGroup(Db)
+			selGroupArr = groups()
+			selectGroup.Refresh()
 		} else {
 			ReadSelectedGroup(Db, delGroupId)
+			selGroupArr = groups()
+			selectGroup.Refresh()
 		}
 		scrStudents.Refresh()
 	})
-
-	groups := func() []string {
-		ReadGroup(Db)
-		var s []string
-		for i := 0; i <= len(arrGroups)-1; i++ {
-			is := arrGroups[i].Name
-			s = append(s, is)
-		}
-		return s
-	}
-
-	selectGroup := widget.NewSelect(groups(), func(s string) {
-		fmt.Println(s)
-	})
-	selectGroup.PlaceHolder = "Группа"
 
 	WindowAddStudent := dialog.NewCustom("Добавить студента", "Закрыть",
 		container.NewVBox(
