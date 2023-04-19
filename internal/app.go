@@ -122,6 +122,22 @@ func App() fyne.Window {
 		}
 		scrStudents.Refresh()
 	})
+
+	groups := func() []string {
+		ReadGroup(Db)
+		var s []string
+		for i := 0; i <= len(arrGroups)-1; i++ {
+			is := arrGroups[i].Name
+			s = append(s, is)
+		}
+		return s
+	}
+
+	selectGroup := widget.NewSelect(groups(), func(s string) {
+		fmt.Println(s)
+	})
+	selectGroup.PlaceHolder = "Группа"
+
 	WindowAddStudent := dialog.NewCustom("Добавить студента", "Закрыть",
 		container.NewVBox(
 			widget.NewLabel("Добавить ученика"),
@@ -129,6 +145,7 @@ func App() fyne.Window {
 			entryName,
 			widget.NewLabel("Номер телефона"),
 			entryPhone,
+			selectGroup,
 			buttonComfirmStudent,
 		), w)
 
