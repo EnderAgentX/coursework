@@ -121,10 +121,12 @@ func App() fyne.Window {
 		DeleteGroup(Db, w, delGroupId)
 		scrGroups.Refresh()
 		listStudents.Refresh()
-		selGroupArr = groups()
-		selectGroup = widget.NewSelect(selGroupArr, func(s string) {
-			fmt.Println(s)
-		})
+		for i := 0; i < len(selectGroup.Options); i++ {
+			if selectGroup.Options[i] == "123" {
+				selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
+			}
+		}
+		fmt.Println(selectGroup.Options[0])
 		selectGroup.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
@@ -189,6 +191,7 @@ func App() fyne.Window {
 	WindowAddGroup.Resize(fyne.NewSize(300, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
 		WindowAddGroup.Show()
+
 	})
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
