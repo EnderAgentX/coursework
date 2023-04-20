@@ -109,24 +109,31 @@ func App() fyne.Window {
 		return s
 	}
 	var selGroupArr []string
+	var selectedGroupId int
 	selGroupArr = groups()
 	selectGroup := widget.NewSelect(selGroupArr, func(s string) {
 		fmt.Println(s)
+		selectedGroupId = GetGroupIdByName(Db, s)
 	})
 
 	selectGroup.PlaceHolder = "Группа"
 
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
-		fmt.Println(delGroupId)
+		delGroupName := GetGroupName(Db, delGroupId)
 		DeleteGroup(Db, w, delGroupId)
+		selectGroup.ClearSelected()
+		selectGroup.Refresh()
 		scrGroups.Refresh()
 		listStudents.Refresh()
+		fmt.Println(delGroupId)
+		fmt.Println(delGroupName)
 		for i := 0; i < len(selectGroup.Options); i++ {
-			if selectGroup.Options[i] == "123" {
+			if selectGroup.Options[i] == delGroupName {
+				fmt.Println(GetGroupIdByName(Db, delGroupName))
 				selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
 			}
 		}
-		fmt.Println(selectGroup.Options[0])
+		//fmt.Println(selectGroup.Options[0])
 		selectGroup.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
@@ -138,13 +145,22 @@ func App() fyne.Window {
 	buttonComfirmStudent := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
-		AddStudent(Db, w, name, phone, delGroupId)
+		if selectedGroupId == 0 {
+			dialog.ShowError(
+				errors.New("Не выбрана группа!"),
+				w,
+			)
+		} else {
+			AddStudent(Db, w, name, phone, selectedGroupId)
+		}
 		if delGroupId == 0 {
 			ReadGroup(Db)
+			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
 		} else {
 			ReadSelectedGroup(Db, delGroupId)
+			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
 		}
@@ -165,20 +181,20 @@ func App() fyne.Window {
 	WindowAddStudent.Resize(fyne.NewSize(300, 200))
 
 	btnAddStudent := widget.NewButton("Добавить студента", func() {
-		if delGroupId == 0 {
-			dialog.ShowError(
-				errors.New("Не выбрана группа!"),
-				w,
-			)
-		} else {
-			WindowAddStudent.Show()
-		}
+
+		WindowAddStudent.Show()
+
 	})
 
 	entryGroup := widget.NewEntry()
 	buttonComfirmGroup := widget.NewButton("Добавить", func() {
 		name := entryGroup.Text
 		AddGroup(Db, name)
+		selectGroup.Options = append(selectGroup.Options, name)
+		selectGroup.SetSelected(selectGroup.Options[0])
+		selectGroup.ClearSelected()
+		selectGroup.OnChanged(selectGroup.PlaceHolder)
+		selectGroup.Show()
 		scrGroups.Refresh()
 	})
 

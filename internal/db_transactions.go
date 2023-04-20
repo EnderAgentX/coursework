@@ -162,6 +162,60 @@ func ReadGroup(db *sql.DB) []Group {
 	return arrGroups
 }
 
+func GetGroupName(db *sql.DB, groupId int) string {
+	var groupName string
+
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "SELECT GroupName FROM StudyGroup WHERE Id = @Id"
+
+	rows, err := db.QueryContext(ctx, query, sql.Named("Id", groupId))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&groupName); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return groupName
+}
+
+func GetGroupIdByName(db *sql.DB, groupName string) int {
+	var groupId int
+
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "SELECT Id FROM StudyGroup WHERE GroupName = @groupName"
+
+	rows, err := db.QueryContext(ctx, query, sql.Named("groupName", groupName))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for rows.Next() {
+		if err := rows.Scan(&groupId); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return groupId
+}
+
 func DeleteStudent(db *sql.DB, delId int) {
 	ctx := context.Background()
 
