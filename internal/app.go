@@ -145,11 +145,19 @@ func App() fyne.Window {
 	buttonComfirmStudent := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		phone := entryPhone.Text
-		if selectedGroupId == 0 {
+		if name == "" || phone == "" {
 			dialog.ShowError(
-				errors.New("Не выбрана группа!"),
+				errors.New("Не все данные введены"),
 				w,
 			)
+		}
+		if selectedGroupId == 0 {
+			if name != "" && phone != "" {
+				dialog.ShowError(
+					errors.New("Не выбрана группа!"),
+					w,
+				)
+			}
 		} else {
 			AddStudent(Db, w, name, phone, selectedGroupId)
 		}
