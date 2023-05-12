@@ -185,8 +185,9 @@ func App() fyne.Window {
 	WindowAddStudent.Resize(fyne.NewSize(300, 200))
 
 	btnAddStudent := widget.NewButton("Добавить студента", func() {
+		entryName.Text = ""
+		entryPhone.Text = ""
 		selectGroup.ClearSelected()
-		fmt.Println(DB.GetGroupName(DB.Db, selectedListGroupId))
 		for i := 0; i < len(selectGroup.Options); i++ {
 			if DB.GetGroupName(DB.Db, selectedListGroupId) == selectGroup.Options[i] {
 				selectGroup.SetSelected(selectGroup.Options[i])
@@ -217,6 +218,7 @@ func App() fyne.Window {
 		), w)
 	WindowAddGroup.Resize(fyne.NewSize(300, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
+		entryGroup.Text = ""
 		WindowAddGroup.Show()
 
 	})
@@ -224,16 +226,27 @@ func App() fyne.Window {
 	btnEditStudent := widget.NewButton("Изменить студента", nil)
 
 	buttonComfirmEditGroup := widget.NewButton("Изменить", func() {
-		scrGroups.Refresh()
+		editGroupName := DB.GetGroupName(DB.Db, selectedGroupId)
+		fmt.Println(editGroupName)
+		fmt.Println(entryGroup.Text)
 	})
 
 	WindowEditGroup := dialog.NewCustom("Изменить группу", "Закрыть",
 		container.NewVBox(
 			widget.NewLabel("Группа"),
+			selectGroup,
 			entryGroup,
 			buttonComfirmEditGroup,
 		), w)
 	btnEditGroup := widget.NewButton("Изменить группу", func() {
+		entryGroup.Text = ""
+		selectGroup.ClearSelected()
+		for i := 0; i < len(selectGroup.Options); i++ {
+			if DB.GetGroupName(DB.Db, selectedListGroupId) == selectGroup.Options[i] {
+				selectGroup.SetSelected(selectGroup.Options[i])
+			}
+		}
+
 		WindowEditGroup.Show()
 	})
 
