@@ -279,3 +279,20 @@ func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 
 	}
 }
+
+func UpdateGroup(db *sql.DB, groupId int, newName string) {
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	query := "UPDATE StudyGroup SET GroupName = @GroupName WHERE Id = @Id"
+	_, err = db.ExecContext(ctx, query, sql.Named("GroupName", newName), sql.Named("Id", groupId))
+	if err != nil {
+		panic(err)
+	}
+	ReadGroup(db)
+}

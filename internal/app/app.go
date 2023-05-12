@@ -227,8 +227,22 @@ func App() fyne.Window {
 
 	buttonComfirmEditGroup := widget.NewButton("Изменить", func() {
 		editGroupName := DB.GetGroupName(DB.Db, selectedGroupId)
+		fmt.Println(selectedGroupId)
 		fmt.Println(editGroupName)
 		fmt.Println(entryGroup.Text)
+		DB.UpdateGroup(DB.Db, selectedGroupId, entryGroup.Text)
+		for i := 0; i < len(selectGroup.Options); i++ {
+			if selectGroup.Options[i] == editGroupName {
+				selectGroup.Options[i] = entryGroup.Text
+			}
+		}
+		for i := 0; i < len(selectGroup.Options); i++ {
+			if DB.GetGroupName(DB.Db, selectedListGroupId) == selectGroup.Options[i] {
+				selectGroup.SetSelected(selectGroup.Options[i])
+			}
+		}
+		selectGroup.Refresh()
+		listGroups.Refresh()
 	})
 
 	WindowEditGroup := dialog.NewCustom("Изменить группу", "Закрыть",
