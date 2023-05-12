@@ -1,4 +1,4 @@
-package internal
+package DB
 
 import (
 	"context"
@@ -7,9 +7,17 @@ import (
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/widget"
+	"github.com/EnderAgentX/coursework/internal/model"
 	_ "github.com/denisenkom/go-mssqldb"
 	"log"
 )
+
+var ArrStudents []model.Student
+var ArrGroups []model.Group
+
+var AnswerStudents = widget.NewLabel("")
+var AnswerGroups = widget.NewLabel("")
 
 func AddStudent(db *sql.DB, w fyne.Window, name, phone string, groupId int) {
 	ctx := context.Background()
@@ -64,11 +72,11 @@ func AddGroup(db *sql.DB, group string) {
 	ReadGroup(db)
 }
 
-func ReadStudents(db *sql.DB) []Student {
+func ReadStudents(db *sql.DB) []model.Student {
 	var id int
 	var name, phone string
-	var st Student
-	arrStudents = nil
+	var st model.Student
+	ArrStudents = nil
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -77,7 +85,7 @@ func ReadStudents(db *sql.DB) []Student {
 		panic(err)
 	}
 
-	answerStudents.Text = ""
+	AnswerStudents.Text = ""
 	count := 0
 	query := "SELECT Id, FullName, Phone FROM Student"
 	rows, err := db.QueryContext(ctx, query)
@@ -89,20 +97,20 @@ func ReadStudents(db *sql.DB) []Student {
 			log.Fatal(err)
 		}
 		st.Id, st.Name, st.Phone = id, name, phone
-		arrStudents = append(arrStudents, st)
+		ArrStudents = append(ArrStudents, st)
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
 
-	return arrStudents
+	return ArrStudents
 }
 
-func ReadSelectedGroup(db *sql.DB, groupId int) []Student {
+func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
 	var id int
 	var name, phone string
-	var st Student
-	arrStudents = nil
+	var st model.Student
+	ArrStudents = nil
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -111,7 +119,7 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []Student {
 		panic(err)
 	}
 
-	answerStudents.Text = ""
+	AnswerStudents.Text = ""
 	count := 0
 	query := "SELECT Student.Id, FullName, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
 	rows, err := db.QueryContext(ctx, query, sql.Named("Group", groupId))
@@ -123,20 +131,20 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []Student {
 			log.Fatal(err)
 		}
 		st.Id, st.Name, st.Phone = id, name, phone
-		arrStudents = append(arrStudents, st)
+		ArrStudents = append(ArrStudents, st)
 		count++
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
 
-	return arrStudents
+	return ArrStudents
 }
 
-func ReadGroup(db *sql.DB) []Group {
+func ReadGroup(db *sql.DB) []model.Group {
 	var id int
 	var group string
-	var gr Group
-	arrGroups = nil
+	var gr model.Group
+	ArrGroups = nil
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -155,11 +163,11 @@ func ReadGroup(db *sql.DB) []Group {
 			log.Fatal(err)
 		}
 		gr.Id, gr.Name = id, group
-		arrGroups = append(arrGroups, gr)
+		ArrGroups = append(ArrGroups, gr)
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
-	return arrGroups
+	return ArrGroups
 }
 
 func GetGroupName(db *sql.DB, groupId int) string {

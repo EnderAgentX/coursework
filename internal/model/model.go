@@ -1,4 +1,4 @@
-package internal
+package model
 
 type Student struct {
 	Id    int

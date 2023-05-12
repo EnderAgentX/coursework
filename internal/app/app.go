@@ -1,4 +1,4 @@
-package internal
+package app
 
 import (
 	"errors"
@@ -8,14 +8,10 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"github.com/EnderAgentX/coursework/internal/DB"
+	"github.com/EnderAgentX/coursework/internal/model"
 	"strconv"
 )
-
-var arrStudents []Student
-var arrGroups []Group
-
-var answerStudents = widget.NewLabel("")
-var answerGroups = widget.NewLabel("")
 
 func App() fyne.Window {
 	myApp := app.New()
@@ -25,46 +21,46 @@ func App() fyne.Window {
 
 	listStudents := widget.NewList(
 		func() int {
-			return len(arrStudents)
+			return len(DB.ArrStudents)
 		},
 		func() fyne.CanvasObject {
 			return widget.NewLabel("")
 		},
 		func(idList widget.ListItemID, obj fyne.CanvasObject) {
-			obj.(*widget.Label).SetText(arrStudents[idList].Name)
+			obj.(*widget.Label).SetText(DB.ArrStudents[idList].Name)
 		},
 	)
 	listGroups := widget.NewList(
 		func() int {
-			return len(arrGroups)
+			return len(DB.ArrGroups)
 		},
 		func() fyne.CanvasObject {
 			return widget.NewLabel("")
 		},
 		func(idList widget.ListItemID, obj fyne.CanvasObject) {
-			obj.(*widget.Label).SetText(arrGroups[idList].Name)
+			obj.(*widget.Label).SetText(DB.ArrGroups[idList].Name)
 		},
 	)
 
 	ListId := widget.NewLabel("Id:")
 	ListName := widget.NewLabel("Имя:")
 	ListPhone := widget.NewLabel("Телефон:")
-	var st Student
+	var st model.Student
 	var delStudentId int
 	var delGroupId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
-		st.Id, st.Name, st.Phone = arrStudents[idList].Id, arrStudents[idList].Name, arrStudents[idList].Phone
+		st.Id, st.Name, st.Phone = DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Phone
 		ListId.Text = "Id: " + strconv.Itoa(st.Id)
 		ListName.Text = "Имя: " + st.Name
 		ListPhone.Text = "Телефон: " + st.Phone
-		delStudentId = arrStudents[idList].Id
+		delStudentId = DB.ArrStudents[idList].Id
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
-		delGroupId = arrGroups[idList].Id
-		ReadSelectedGroup(Db, delGroupId)
+		delGroupId = DB.ArrGroups[idList].Id
+		DB.ReadSelectedGroup(DB.Db, delGroupId)
 		listStudents.UnselectAll()
 		listStudents.Refresh()
 	}
@@ -79,11 +75,11 @@ func App() fyne.Window {
 
 	btnDelStudent := widget.NewButton("Удалить студента", func() {
 		fmt.Println(delStudentId)
-		DeleteStudent(Db, delStudentId)
+		DB.DeleteStudent(DB.Db, delStudentId)
 		if delGroupId == 0 {
-			ReadGroup(Db)
+			DB.ReadGroup(DB.Db)
 		} else {
-			ReadSelectedGroup(Db, delGroupId)
+			DB.ReadSelectedGroup(DB.Db, delGroupId)
 		}
 
 		scrStudents.Refresh()
@@ -100,10 +96,10 @@ func App() fyne.Window {
 	})
 
 	groups := func() []string {
-		ReadGroup(Db)
+		DB.ReadGroup(DB.Db)
 		var s []string
-		for i := 0; i <= len(arrGroups)-1; i++ {
-			is := arrGroups[i].Name
+		for i := 0; i <= len(DB.ArrGroups)-1; i++ {
+			is := DB.ArrGroups[i].Name
 			s = append(s, is)
 		}
 		return s
@@ -113,14 +109,14 @@ func App() fyne.Window {
 	selGroupArr = groups()
 	selectGroup := widget.NewSelect(selGroupArr, func(s string) {
 		fmt.Println(s)
-		selectedGroupId = GetGroupIdByName(Db, s)
+		selectedGroupId = DB.GetGroupIdByName(DB.Db, s)
 	})
 
 	selectGroup.PlaceHolder = "Группа"
 
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
-		delGroupName := GetGroupName(Db, delGroupId)
-		DeleteGroup(Db, w, delGroupId)
+		delGroupName := DB.GetGroupName(DB.Db, delGroupId)
+		DB.DeleteGroup(DB.Db, w, delGroupId)
 		selectGroup.ClearSelected()
 		selectGroup.Refresh()
 		scrGroups.Refresh()
@@ -129,7 +125,7 @@ func App() fyne.Window {
 		fmt.Println(delGroupName)
 		for i := 0; i < len(selectGroup.Options); i++ {
 			if selectGroup.Options[i] == delGroupName {
-				fmt.Println(GetGroupIdByName(Db, delGroupName))
+				fmt.Println(DB.GetGroupIdByName(DB.Db, delGroupName))
 				selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
 			}
 		}
@@ -159,15 +155,15 @@ func App() fyne.Window {
 				)
 			}
 		} else {
-			AddStudent(Db, w, name, phone, selectedGroupId)
+			DB.AddStudent(DB.Db, w, name, phone, selectedGroupId)
 		}
 		if delGroupId == 0 {
-			ReadGroup(Db)
+			DB.ReadGroup(DB.Db)
 			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
 		} else {
-			ReadSelectedGroup(Db, delGroupId)
+			DB.ReadSelectedGroup(DB.Db, delGroupId)
 			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
@@ -197,7 +193,7 @@ func App() fyne.Window {
 	entryGroup := widget.NewEntry()
 	buttonComfirmGroup := widget.NewButton("Добавить", func() {
 		name := entryGroup.Text
-		AddGroup(Db, name)
+		DB.AddGroup(DB.Db, name)
 		selectGroup.Options = append(selectGroup.Options, name)
 		selectGroup.SetSelected(selectGroup.Options[0])
 		selectGroup.ClearSelected()
