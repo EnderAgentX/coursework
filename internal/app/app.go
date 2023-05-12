@@ -46,21 +46,21 @@ func App() fyne.Window {
 	ListName := widget.NewLabel("Имя:")
 	ListPhone := widget.NewLabel("Телефон:")
 	var st model.Student
-	var delStudentId int
-	var delGroupId int
+	var selectedListStudentId int
+	var selectedListGroupId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
 		st.Id, st.Name, st.Phone = DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Phone
 		ListId.Text = "Id: " + strconv.Itoa(st.Id)
 		ListName.Text = "Имя: " + st.Name
 		ListPhone.Text = "Телефон: " + st.Phone
-		delStudentId = DB.ArrStudents[idList].Id
+		selectedListStudentId = DB.ArrStudents[idList].Id
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
-		delGroupId = DB.ArrGroups[idList].Id
-		DB.ReadSelectedGroup(DB.Db, delGroupId)
+		selectedListGroupId = DB.ArrGroups[idList].Id
+		DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
 		listStudents.UnselectAll()
 		listStudents.Refresh()
 	}
@@ -74,12 +74,12 @@ func App() fyne.Window {
 	cardStudents.Resize(fyne.NewSize(300, 300))
 
 	btnDelStudent := widget.NewButton("Удалить студента", func() {
-		fmt.Println(delStudentId)
-		DB.DeleteStudent(DB.Db, delStudentId)
-		if delGroupId == 0 {
+		fmt.Println(selectedListStudentId)
+		DB.DeleteStudent(DB.Db, selectedListStudentId)
+		if selectedListGroupId == 0 {
 			DB.ReadGroup(DB.Db)
 		} else {
-			DB.ReadSelectedGroup(DB.Db, delGroupId)
+			DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
 		}
 
 		scrStudents.Refresh()
@@ -88,7 +88,7 @@ func App() fyne.Window {
 		ListName.Text = "Имя: "
 		ListPhone.Text = "Телефон: "
 		listStudents.UnselectAll()
-		delStudentId = 0
+		selectedListStudentId = 0
 		ListId.Refresh()
 		ListName.Refresh()
 		ListPhone.Refresh()
@@ -115,13 +115,13 @@ func App() fyne.Window {
 	selectGroup.PlaceHolder = "Группа"
 
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
-		delGroupName := DB.GetGroupName(DB.Db, delGroupId)
-		DB.DeleteGroup(DB.Db, w, delGroupId)
+		delGroupName := DB.GetGroupName(DB.Db, selectedListGroupId)
+		DB.DeleteGroup(DB.Db, w, selectedListGroupId)
 		selectGroup.ClearSelected()
 		selectGroup.Refresh()
 		scrGroups.Refresh()
 		listStudents.Refresh()
-		fmt.Println(delGroupId)
+		fmt.Println(selectedListGroupId)
 		fmt.Println(delGroupName)
 		for i := 0; i < len(selectGroup.Options); i++ {
 			if selectGroup.Options[i] == delGroupName {
@@ -133,7 +133,7 @@ func App() fyne.Window {
 		selectGroup.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
-		delGroupId = 0
+		selectedListGroupId = 0
 	})
 
 	entryName := widget.NewEntry()
@@ -157,13 +157,13 @@ func App() fyne.Window {
 		} else {
 			DB.AddStudent(DB.Db, w, name, phone, selectedGroupId)
 		}
-		if delGroupId == 0 {
+		if selectedListGroupId == 0 {
 			DB.ReadGroup(DB.Db)
 			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
 		} else {
-			DB.ReadSelectedGroup(DB.Db, delGroupId)
+			DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
 			fmt.Println(selectedGroupId)
 			selGroupArr = groups()
 			selectGroup.Refresh()
@@ -185,13 +185,20 @@ func App() fyne.Window {
 	WindowAddStudent.Resize(fyne.NewSize(300, 200))
 
 	btnAddStudent := widget.NewButton("Добавить студента", func() {
+		selectGroup.ClearSelected()
+		fmt.Println(DB.GetGroupName(DB.Db, selectedListGroupId))
+		for i := 0; i < len(selectGroup.Options); i++ {
+			if DB.GetGroupName(DB.Db, selectedListGroupId) == selectGroup.Options[i] {
+				selectGroup.SetSelected(selectGroup.Options[i])
+			}
+		}
 
 		WindowAddStudent.Show()
 
 	})
 
 	entryGroup := widget.NewEntry()
-	buttonComfirmGroup := widget.NewButton("Добавить", func() {
+	buttonComfirmAddGroup := widget.NewButton("Добавить", func() {
 		name := entryGroup.Text
 		DB.AddGroup(DB.Db, name)
 		selectGroup.Options = append(selectGroup.Options, name)
@@ -206,23 +213,42 @@ func App() fyne.Window {
 		container.NewVBox(
 			widget.NewLabel("Группа"),
 			entryGroup,
-			buttonComfirmGroup,
+			buttonComfirmAddGroup,
 		), w)
 	WindowAddGroup.Resize(fyne.NewSize(300, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
 		WindowAddGroup.Show()
 
 	})
+
+	btnEditStudent := widget.NewButton("Изменить студента", nil)
+
+	buttonComfirmEditGroup := widget.NewButton("Изменить", func() {
+		scrGroups.Refresh()
+	})
+
+	WindowEditGroup := dialog.NewCustom("Изменить группу", "Закрыть",
+		container.NewVBox(
+			widget.NewLabel("Группа"),
+			entryGroup,
+			buttonComfirmEditGroup,
+		), w)
+	btnEditGroup := widget.NewButton("Изменить группу", func() {
+		WindowEditGroup.Show()
+	})
+
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
 		widget.NewCard("", "", container.NewHBox(
 			container.NewVBox(
-				btnDelStudent,
 				btnAddStudent,
+				btnEditStudent,
+				btnDelStudent,
 			),
 			container.NewVBox(
-				btnDelGroup,
 				btnAddGroup,
+				btnEditGroup,
+				btnDelGroup,
 			),
 		)),
 		widget.NewCard("", "", container.NewVBox(
