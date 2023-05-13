@@ -167,8 +167,7 @@ func App() fyne.Window {
 				errors.New("Не все данные введены"),
 				w,
 			)
-		}
-		if selectedGroupId == 0 {
+		} else if selectedGroupId == 0 {
 			if name != "" && phone != "" && gender != "" && studentCard != "" {
 				dialog.ShowError(
 					errors.New("Не выбрана группа!"),
@@ -212,6 +211,7 @@ func App() fyne.Window {
 		entryName.Text = ""
 		entryPhone.Text = ""
 		selectGroup.ClearSelected()
+		selectGender.ClearSelected()
 		for i := 0; i < len(selectGroup.Options); i++ {
 			if DB.GetGroupName(DB.Db, selectedListGroupId) == selectGroup.Options[i] {
 				selectGroup.SetSelected(selectGroup.Options[i])
@@ -225,13 +225,20 @@ func App() fyne.Window {
 	entryGroup := widget.NewEntry()
 	buttonComfirmAddGroup := widget.NewButton("Добавить", func() {
 		name := entryGroup.Text
-		DB.AddGroup(DB.Db, name)
-		selectGroup.Options = append(selectGroup.Options, name)
-		selectGroup.SetSelected(selectGroup.Options[0])
-		selectGroup.ClearSelected()
-		selectGroup.OnChanged(selectGroup.PlaceHolder)
-		selectGroup.Show()
-		scrGroups.Refresh()
+		if name == "" {
+			dialog.ShowError(
+				errors.New("Не все данные введены!"),
+				w,
+			)
+		} else {
+			DB.AddGroup(DB.Db, name)
+			selectGroup.Options = append(selectGroup.Options, name)
+			selectGroup.SetSelected(selectGroup.Options[0])
+			selectGroup.ClearSelected()
+			selectGroup.OnChanged(selectGroup.PlaceHolder)
+			selectGroup.Show()
+			scrGroups.Refresh()
+		}
 	})
 
 	WindowAddGroup := dialog.NewCustom("Добавить группу", "Закрыть",
@@ -240,7 +247,7 @@ func App() fyne.Window {
 			entryGroup,
 			buttonComfirmAddGroup,
 		), w)
-	WindowAddGroup.Resize(fyne.NewSize(300, 200))
+	WindowAddGroup.Resize(fyne.NewSize(250, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
 		entryGroup.Text = ""
 		WindowAddGroup.Show()
@@ -276,6 +283,7 @@ func App() fyne.Window {
 			entryGroup,
 			buttonComfirmEditGroup,
 		), w)
+	WindowEditGroup.Resize(fyne.NewSize(250, 200))
 	btnEditGroup := widget.NewButton("Изменить группу", func() {
 		entryGroup.Text = ""
 		selectGroup.ClearSelected()
@@ -288,18 +296,91 @@ func App() fyne.Window {
 		WindowEditGroup.Show()
 	})
 
+	btnMale := widget.NewButton("Показать студентов мужского пола", func() {
+		fmt.Println(selectedGroupId)
+		if selectedListGroupId == 0 {
+			DB.ReadStudentsGender(DB.Db, "Мужской")
+		} else {
+			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
+		}
+		listStudents.Refresh()
+	})
+	btnFemale := widget.NewButton("Показать студентов женского пола", func() {
+		if selectedListGroupId == 0 {
+			DB.ReadStudentsGender(DB.Db, "Женский")
+		} else {
+			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
+		}
+		listStudents.Refresh()
+	})
+
+	labelStudentCardSearch := widget.NewLabel("Поиск по студенческому билету")
+	entryStudentCardSearch := widget.NewEntry()
+	btnSearch := widget.NewButton("Поиск", func() {
+		if entryStudentCardSearch.Text == "" {
+			dialog.ShowError(
+				errors.New("Не все данные введены!"),
+				w,
+			)
+		} else {
+
+			_, count := DB.CardSearch(DB.Db, entryStudentCardSearch.Text)
+			if count == 0 {
+				dialog.ShowError(
+					errors.New("Студенты не найдены!"),
+					w,
+				)
+			} else {
+				listStudents.Select(0)
+			}
+			listStudents.Refresh()
+		}
+
+	})
+	btnCancel := widget.NewButton("Отмена", func() {
+		listGroups.UnselectAll()
+		DB.ReadStudents(DB.Db)
+		ListId.Text = "Id: "
+		ListName.Text = "Имя: "
+		ListGender.Text = "Пол: "
+		ListStudentCard.Text = "Студенческий билет: "
+		ListPhone.Text = "Телефон: "
+		entryStudentCardSearch.Text = ""
+		entryStudentCardSearch.Refresh()
+		ListId.Refresh()
+		ListName.Refresh()
+		ListGender.Refresh()
+		ListStudentCard.Refresh()
+		ListPhone.Refresh()
+		listStudents.Refresh()
+	})
+
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
 		widget.NewCard("", "", container.NewHBox(
 			container.NewVBox(
-				btnAddStudent,
-				btnEditStudent,
-				btnDelStudent,
-			),
-			container.NewVBox(
-				btnAddGroup,
-				btnEditGroup,
-				btnDelGroup,
+				container.NewHBox(
+					container.NewVBox(
+						btnAddStudent,
+						btnEditStudent,
+						btnDelStudent,
+					),
+					container.NewVBox(
+						btnAddGroup,
+						btnEditGroup,
+						btnDelGroup,
+					),
+				),
+				container.NewVBox(
+					btnMale,
+					btnFemale,
+					labelStudentCardSearch,
+				),
+				entryStudentCardSearch,
+				container.NewHBox(
+					btnSearch,
+					btnCancel,
+				),
 			),
 		)),
 		widget.NewCard("", "", container.NewVBox(
