@@ -75,7 +75,7 @@ func AddGroup(db *sql.DB, group string) {
 }
 
 func ReadStudents(db *sql.DB) []model.Student {
-	var id int
+	var id, groupId int
 	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
@@ -89,16 +89,16 @@ func ReadStudents(db *sql.DB) []model.Student {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Id, FullName, Gender, StudentCard, Phone FROM Student"
+	query := "SELECT Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student"
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupId); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupId
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
@@ -109,7 +109,7 @@ func ReadStudents(db *sql.DB) []model.Student {
 }
 
 func ReadStudentsGender(db *sql.DB, genderSel string) []model.Student {
-	var id int
+	var id, groupId int
 	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
@@ -123,16 +123,16 @@ func ReadStudentsGender(db *sql.DB, genderSel string) []model.Student {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Id, FullName, Gender, StudentCard, Phone FROM Student WHERE Gender = @Gender"
+	query := "SELECT Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student WHERE Gender = @Gender"
 	rows, err := db.QueryContext(ctx, query, sql.Named("Gender", genderSel))
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupId); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupId
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
@@ -143,7 +143,7 @@ func ReadStudentsGender(db *sql.DB, genderSel string) []model.Student {
 }
 
 func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
-	var id int
+	var id, groupIdBD int
 	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
@@ -157,16 +157,16 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
+	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
 	rows, err := db.QueryContext(ctx, query, sql.Named("Group", groupId))
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupIdBD); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupIdBD
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
@@ -177,7 +177,7 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
 }
 
 func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
-	var id int
+	var id, groupId int
 	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
@@ -191,16 +191,16 @@ func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudentCard = @StudentCard"
+	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudentCard = @StudentCard"
 	rows, err := db.QueryContext(ctx, query, sql.Named("StudentCard", cardSearch))
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupId); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupId
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
@@ -211,7 +211,7 @@ func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
 }
 
 func ReadSelectedGroupGender(db *sql.DB, groupId int, genderSel string) []model.Student {
-	var id int
+	var id, groupIdBD int
 	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
@@ -225,11 +225,11 @@ func ReadSelectedGroupGender(db *sql.DB, groupId int, genderSel string) []model.
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
+	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
 	if genderSel == "Мужской" {
-		query = "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group AND Gender = @Gender"
+		query = "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group AND Gender = @Gender"
 	} else if genderSel == "Женский" {
-		query = "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group AND Gender = @Gender"
+		query = "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group AND Gender = @Gender"
 	}
 
 	rows, err := db.QueryContext(ctx, query, sql.Named("Group", groupId), sql.Named("Gender", genderSel))
@@ -237,10 +237,10 @@ func ReadSelectedGroupGender(db *sql.DB, groupId int, genderSel string) []model.
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupIdBD); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupIdBD
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}

@@ -47,24 +47,27 @@ func App() fyne.Window {
 	ListGender := widget.NewLabel("Пол:")
 	ListStudentCard := widget.NewLabel("Студенческий билет:")
 	ListPhone := widget.NewLabel("Телефон:")
+	ListGroup := widget.NewLabel("Группа:")
 	var st model.Student
 	var selectedListStudentId int
 	var selectedListGroupId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
-		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone =
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId =
 			DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Gender,
-			DB.ArrStudents[idList].StudentCard, DB.ArrStudents[idList].Phone
+			DB.ArrStudents[idList].StudentCard, DB.ArrStudents[idList].Phone, DB.ArrStudents[idList].GroupId
 		ListId.Text = "Id: " + strconv.Itoa(st.Id)
 		ListName.Text = "Имя: " + st.Name
 		ListGender.Text = "Пол: " + st.Gender
 		ListStudentCard.Text = "Студенческий билет: " + st.StudentCard
 		ListPhone.Text = "Телефон: " + st.Phone
+		ListGroup.Text = "Группа: " + DB.GetGroupName(DB.Db, st.GroupId)
 		selectedListStudentId = DB.ArrStudents[idList].Id
 		ListId.Refresh()
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
 		ListPhone.Refresh()
+		ListGroup.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
 		selectedListGroupId = DB.ArrGroups[idList].Id
@@ -97,6 +100,7 @@ func App() fyne.Window {
 		ListGender.Text = "Пол: "
 		ListStudentCard.Text = "Студенческий билет: "
 		ListPhone.Text = "Телефон: "
+		ListPhone.Text = "Группа: "
 		listStudents.UnselectAll()
 		selectedListStudentId = 0
 		ListId.Refresh()
@@ -104,6 +108,7 @@ func App() fyne.Window {
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
 		ListPhone.Refresh()
+		ListGroup.Refresh()
 
 	})
 
@@ -345,6 +350,7 @@ func App() fyne.Window {
 		ListGender.Text = "Пол: "
 		ListStudentCard.Text = "Студенческий билет: "
 		ListPhone.Text = "Телефон: "
+		ListGroup.Text = "Группа: "
 		entryStudentCardSearch.Text = ""
 		entryStudentCardSearch.Refresh()
 		ListId.Refresh()
@@ -352,11 +358,13 @@ func App() fyne.Window {
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
 		ListPhone.Refresh()
+		ListGroup.Refresh()
 		listStudents.Refresh()
 	})
 
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
+
 		widget.NewCard("", "", container.NewHBox(
 			container.NewVBox(
 				container.NewHBox(
@@ -389,6 +397,7 @@ func App() fyne.Window {
 			ListGender,
 			ListStudentCard,
 			ListPhone,
+			ListGroup,
 		)),
 	)
 

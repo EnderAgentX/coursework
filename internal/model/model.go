@@ -6,6 +6,7 @@ type Student struct {
 	Gender      string
 	StudentCard string
 	Phone       string
+	GroupId     int
 }
 
 type Group struct {
