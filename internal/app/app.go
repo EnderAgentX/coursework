@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/EnderAgentX/coursework/internal/DB"
 	"github.com/EnderAgentX/coursework/internal/model"
-	"strconv"
 )
 
 func App() fyne.Window {
@@ -42,7 +41,6 @@ func App() fyne.Window {
 		},
 	)
 
-	ListId := widget.NewLabel("Id:")
 	ListName := widget.NewLabel("Имя:")
 	ListGender := widget.NewLabel("Пол:")
 	ListStudentCard := widget.NewLabel("Студенческий билет:")
@@ -55,14 +53,12 @@ func App() fyne.Window {
 		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId =
 			DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Gender,
 			DB.ArrStudents[idList].StudentCard, DB.ArrStudents[idList].Phone, DB.ArrStudents[idList].GroupId
-		ListId.Text = "Id: " + strconv.Itoa(st.Id)
 		ListName.Text = "Имя: " + st.Name
 		ListGender.Text = "Пол: " + st.Gender
 		ListStudentCard.Text = "Студенческий билет: " + st.StudentCard
 		ListPhone.Text = "Телефон: " + st.Phone
 		ListGroup.Text = "Группа: " + DB.GetGroupName(DB.Db, st.GroupId)
 		selectedListStudentId = DB.ArrStudents[idList].Id
-		ListId.Refresh()
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
@@ -95,7 +91,6 @@ func App() fyne.Window {
 
 		scrStudents.Refresh()
 		listStudents.Refresh()
-		ListId.Text = "Id: "
 		ListName.Text = "Имя: "
 		ListGender.Text = "Пол: "
 		ListStudentCard.Text = "Студенческий билет: "
@@ -103,7 +98,6 @@ func App() fyne.Window {
 		ListPhone.Text = "Группа: "
 		listStudents.UnselectAll()
 		selectedListStudentId = 0
-		ListId.Refresh()
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
@@ -142,27 +136,29 @@ func App() fyne.Window {
 
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
 		delGroupName := DB.GetGroupName(DB.Db, selectedListGroupId)
-		DB.DeleteGroup(DB.Db, w, selectedListGroupId)
+		del := DB.DeleteGroup(DB.Db, w, selectedListGroupId)
 		scrGroups.Refresh()
 		listStudents.Refresh()
-		fmt.Println(selectedListGroupId)
-		fmt.Println(delGroupName)
-		for i := 0; i < len(selectGroup.Options); i++ {
-			if selectGroup.Options[i] == delGroupName {
-				fmt.Println(DB.GetGroupIdByName(DB.Db, delGroupName))
-				selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
+		if del == true {
+			fmt.Println(selectedListGroupId)
+			fmt.Println(delGroupName)
+			for i := 0; i < len(selectGroup.Options); i++ {
+				if selectGroup.Options[i] == delGroupName {
+					fmt.Println(DB.GetGroupIdByName(DB.Db, delGroupName))
+					selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
+				}
 			}
+			selectGroup.Refresh()
+			listGroups.UnselectAll()
+			listStudents.UnselectAll()
+			selectedListGroupId = 0
 		}
-		selectGroup.Refresh()
-		listGroups.UnselectAll()
-		listStudents.UnselectAll()
-		selectedListGroupId = 0
 	})
 
 	entryName := widget.NewEntry()
 	entryStudentCard := widget.NewEntry()
 	entryPhone := widget.NewEntry()
-	buttonComfirmStudent := widget.NewButton("Добавить", func() {
+	buttonConfirmStudent := widget.NewButton("Добавить", func() {
 		name := entryName.Text
 		gender := selectedGender
 		studentCard := entryStudentCard.Text
@@ -194,6 +190,7 @@ func App() fyne.Window {
 			selectGroup.Refresh()
 		}
 		scrStudents.Refresh()
+		selectedListGroupId = 0
 	})
 
 	WindowAddStudent := dialog.NewCustom("Добавить студента", "Закрыть",
@@ -207,7 +204,7 @@ func App() fyne.Window {
 			entryPhone,
 			selectGender,
 			selectGroup,
-			buttonComfirmStudent,
+			buttonConfirmStudent,
 		), w)
 
 	WindowAddStudent.Resize(fyne.NewSize(300, 200))
@@ -228,7 +225,7 @@ func App() fyne.Window {
 	})
 
 	entryGroup := widget.NewEntry()
-	buttonComfirmAddGroup := widget.NewButton("Добавить", func() {
+	buttonConfirmAddGroup := widget.NewButton("Добавить", func() {
 		name := entryGroup.Text
 		if name == "" {
 			dialog.ShowError(
@@ -250,7 +247,7 @@ func App() fyne.Window {
 		container.NewVBox(
 			widget.NewLabel("Группа"),
 			entryGroup,
-			buttonComfirmAddGroup,
+			buttonConfirmAddGroup,
 		), w)
 	WindowAddGroup.Resize(fyne.NewSize(250, 200))
 	btnAddGroup := widget.NewButton("Добавить группу", func() {
@@ -259,9 +256,48 @@ func App() fyne.Window {
 
 	})
 
-	btnEditStudent := widget.NewButton("Изменить студента", nil)
+	buttonConfirmEditStudent := widget.NewButton("Изменить", func() {
+		DB.UpdateStudent(DB.Db, selectedListStudentId, entryName.Text, selectedGender, entryStudentCard.Text,
+			entryPhone.Text, selectedGroupId)
+		if selectedGroupId != 0 {
+			DB.ReadSelectedGroup(DB.Db, selectedGroupId)
+		} else {
+			DB.ReadStudents(DB.Db)
+		}
+		listStudents.Refresh()
+		scrStudents.Refresh()
+		selectedGroupId = 0
+		selectedListGroupId = 0
+	})
 
-	buttonComfirmEditGroup := widget.NewButton("Изменить", func() {
+	WindowEditStudent := dialog.NewCustom("Изменить студента", "Закрыть",
+		container.NewVBox(
+			widget.NewLabel("Изменить ученика"),
+			widget.NewLabel("ФИО"),
+			entryName,
+			widget.NewLabel("Студенческий билет"),
+			entryStudentCard,
+			widget.NewLabel("Номер телефона"),
+			entryPhone,
+			selectGender,
+			selectGroup,
+			buttonConfirmEditStudent,
+		), w)
+
+	WindowEditStudent.Resize(fyne.NewSize(300, 200))
+
+	btnEditStudent := widget.NewButton("Изменить студента", func() {
+		fmt.Println(DB.IdSearch(DB.Db, selectedListStudentId))
+		entryName.Text = ""
+		entryStudentCard.Text = ""
+		entryPhone.Text = ""
+		selectGender.ClearSelected()
+		selectGroup.ClearSelected()
+		WindowEditStudent.Show()
+
+	})
+
+	buttonConfirmEditGroup := widget.NewButton("Изменить", func() {
 		editGroupName := DB.GetGroupName(DB.Db, selectedGroupId)
 		fmt.Println(selectedGroupId)
 		fmt.Println(editGroupName)
@@ -279,6 +315,7 @@ func App() fyne.Window {
 		}
 		selectGroup.Refresh()
 		listGroups.Refresh()
+		selectedListGroupId = 0
 	})
 
 	WindowEditGroup := dialog.NewCustom("Изменить группу", "Закрыть",
@@ -286,7 +323,7 @@ func App() fyne.Window {
 			widget.NewLabel("Группа"),
 			selectGroup,
 			entryGroup,
-			buttonComfirmEditGroup,
+			buttonConfirmEditGroup,
 		), w)
 	WindowEditGroup.Resize(fyne.NewSize(250, 200))
 	btnEditGroup := widget.NewButton("Изменить группу", func() {
@@ -309,6 +346,7 @@ func App() fyne.Window {
 			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
 		}
 		listStudents.Refresh()
+		selectedListStudentId = 0
 	})
 	btnFemale := widget.NewButton("Показать студентов женского пола", func() {
 		if selectedListGroupId == 0 {
@@ -317,6 +355,7 @@ func App() fyne.Window {
 			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
 		}
 		listStudents.Refresh()
+		selectedListStudentId = 0
 	})
 
 	labelStudentCardSearch := widget.NewLabel("Поиск по студенческому билету")
@@ -345,15 +384,15 @@ func App() fyne.Window {
 	btnCancel := widget.NewButton("Отмена", func() {
 		listGroups.UnselectAll()
 		DB.ReadStudents(DB.Db)
-		ListId.Text = "Id: "
 		ListName.Text = "Имя: "
 		ListGender.Text = "Пол: "
 		ListStudentCard.Text = "Студенческий билет: "
 		ListPhone.Text = "Телефон: "
 		ListGroup.Text = "Группа: "
 		entryStudentCardSearch.Text = ""
+		selectedListStudentId = 0
+		selectGroup.ClearSelected()
 		entryStudentCardSearch.Refresh()
-		ListId.Refresh()
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
@@ -392,7 +431,6 @@ func App() fyne.Window {
 			),
 		)),
 		widget.NewCard("", "", container.NewVBox(
-			ListId,
 			ListName,
 			ListGender,
 			ListStudentCard,

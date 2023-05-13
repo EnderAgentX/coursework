@@ -351,9 +351,10 @@ func DeleteStudent(db *sql.DB, delId int) {
 	ReadStudents(db)
 }
 
-func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
+func DeleteGroup(db *sql.DB, w fyne.Window, delId int) bool {
 	ctx := context.Background()
 	var cnt int
+	del := false
 	fmt.Println(delId)
 	// Проверка работает ли база
 	err := db.PingContext(ctx)
@@ -380,6 +381,7 @@ func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 		}
 		ReadGroup(db)
 		ReadStudents(db)
+		del = true
 	} else {
 		fmt.Println("Ошибка, удалите всех студентов!")
 		dialog.ShowError(
@@ -388,6 +390,7 @@ func DeleteGroup(db *sql.DB, w fyne.Window, delId int) {
 		)
 
 	}
+	return del
 }
 
 func UpdateGroup(db *sql.DB, groupId int, newName string) {
@@ -405,4 +408,84 @@ func UpdateGroup(db *sql.DB, groupId int, newName string) {
 		panic(err)
 	}
 	ReadGroup(db)
+}
+
+func IdSearch(db *sql.DB, idSearch int) (string, string, string, string, int) {
+	var id, groupId int
+	var name, gender, studentCard, phone string
+	var st model.Student
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	count := 0
+	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone, GroupId FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE Student.Id = @IdSearch"
+	rows, err := db.QueryContext(ctx, query, sql.Named("IdSearch", idSearch))
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupId); err != nil {
+			log.Fatal(err)
+		}
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId = id, name, gender, studentCard, phone, groupId
+		count++
+	}
+	fmt.Printf("Read %d row(s) successfully.\n", count)
+	defer rows.Close()
+
+	return st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId
+}
+
+func UpdateStudent(db *sql.DB, studentId int, fullName, gender, studentCard, phone string, groupId int) []model.Student {
+	var fullNameDB, genderDB, studentCardDB, phoneDB string
+	fullNameDB, genderDB, studentCardDB, phoneDB = "", "", "", ""
+	fullNameDB, genderDB, studentCardDB, phoneDB = fullName, gender, studentCard, phone
+	fmt.Println(groupId)
+
+	fullNameS, genderS, studentCardS, phoneS, groupIdS := IdSearch(db, studentId)
+	fmt.Println(groupIdS)
+	if fullNameDB == "" {
+		fullNameDB = fullNameS
+	}
+	if genderDB == "" {
+		genderDB = genderS
+	}
+	if studentCardDB == "" {
+		studentCardDB = studentCardS
+	}
+	if phoneDB == "" {
+		phoneDB = phoneS
+	}
+
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	AnswerStudents.Text = ""
+	if groupId == 0 {
+		query := "UPDATE Student SET FullName = @FullName, Gender = @Gender, StudentCard = @StudentCard, Phone = @Phone WHERE Id = @Id"
+		_, err = db.ExecContext(ctx, query,
+			sql.Named("FullName", fullNameDB), sql.Named("Gender", genderDB), sql.Named("StudentCard", studentCardDB),
+			sql.Named("Phone", phoneDB), sql.Named("Id", studentId))
+	} else {
+		query := "UPDATE Student SET FullName = @FullName, Gender = @Gender, StudentCard = @StudentCard, Phone = @Phone, GroupId = @GroupId WHERE Id = @Id"
+		_, err = db.ExecContext(ctx, query,
+			sql.Named("FullName", fullNameDB), sql.Named("Gender", genderDB), sql.Named("StudentCard", studentCardDB),
+			sql.Named("Phone", phoneDB), sql.Named("GroupId", groupId), sql.Named("Id", studentId))
+	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return ArrStudents
 }
