@@ -44,18 +44,26 @@ func App() fyne.Window {
 
 	ListId := widget.NewLabel("Id:")
 	ListName := widget.NewLabel("Имя:")
+	ListGender := widget.NewLabel("Пол:")
+	ListStudentCard := widget.NewLabel("Студенческий билет:")
 	ListPhone := widget.NewLabel("Телефон:")
 	var st model.Student
 	var selectedListStudentId int
 	var selectedListGroupId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
-		st.Id, st.Name, st.Phone = DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone =
+			DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Gender,
+			DB.ArrStudents[idList].StudentCard, DB.ArrStudents[idList].Phone
 		ListId.Text = "Id: " + strconv.Itoa(st.Id)
 		ListName.Text = "Имя: " + st.Name
+		ListGender.Text = "Пол: " + st.Gender
+		ListStudentCard.Text = "Студенческий билет: " + st.StudentCard
 		ListPhone.Text = "Телефон: " + st.Phone
 		selectedListStudentId = DB.ArrStudents[idList].Id
 		ListId.Refresh()
 		ListName.Refresh()
+		ListGender.Refresh()
+		ListStudentCard.Refresh()
 		ListPhone.Refresh()
 	}
 	listGroups.OnSelected = func(idList widget.ListItemID) {
@@ -86,11 +94,15 @@ func App() fyne.Window {
 		listStudents.Refresh()
 		ListId.Text = "Id: "
 		ListName.Text = "Имя: "
+		ListGender.Text = "Пол: "
+		ListStudentCard.Text = "Студенческий билет: "
 		ListPhone.Text = "Телефон: "
 		listStudents.UnselectAll()
 		selectedListStudentId = 0
 		ListId.Refresh()
 		ListName.Refresh()
+		ListGender.Refresh()
+		ListStudentCard.Refresh()
 		ListPhone.Refresh()
 
 	})
@@ -106,6 +118,7 @@ func App() fyne.Window {
 	}
 	var selGroupArr []string
 	var selectedGroupId int
+	var selectedGender string
 	selGroupArr = groups()
 	selectGroup := widget.NewSelect(selGroupArr, func(s string) {
 		fmt.Println(s)
@@ -114,11 +127,17 @@ func App() fyne.Window {
 
 	selectGroup.PlaceHolder = "Группа"
 
+	selGenderArr := []string{"Мужской", "Женский"}
+	selectGender := widget.NewSelect(selGenderArr, func(s string) {
+		fmt.Println(s)
+		selectedGender = s
+	})
+
+	selectGender.PlaceHolder = "Пол"
+
 	btnDelGroup := widget.NewButton("Удалить группу", func() {
 		delGroupName := DB.GetGroupName(DB.Db, selectedListGroupId)
 		DB.DeleteGroup(DB.Db, w, selectedListGroupId)
-		selectGroup.ClearSelected()
-		selectGroup.Refresh()
 		scrGroups.Refresh()
 		listStudents.Refresh()
 		fmt.Println(selectedListGroupId)
@@ -129,7 +148,6 @@ func App() fyne.Window {
 				selectGroup.Options = append(selectGroup.Options[:i], selectGroup.Options[i+1:]...)
 			}
 		}
-		//fmt.Println(selectGroup.Options[0])
 		selectGroup.Refresh()
 		listGroups.UnselectAll()
 		listStudents.UnselectAll()
@@ -137,25 +155,28 @@ func App() fyne.Window {
 	})
 
 	entryName := widget.NewEntry()
+	entryStudentCard := widget.NewEntry()
 	entryPhone := widget.NewEntry()
 	buttonComfirmStudent := widget.NewButton("Добавить", func() {
 		name := entryName.Text
+		gender := selectedGender
+		studentCard := entryStudentCard.Text
 		phone := entryPhone.Text
-		if name == "" || phone == "" {
+		if name == "" || phone == "" || gender == "" || studentCard == "" {
 			dialog.ShowError(
 				errors.New("Не все данные введены"),
 				w,
 			)
 		}
 		if selectedGroupId == 0 {
-			if name != "" && phone != "" {
+			if name != "" && phone != "" && gender != "" && studentCard != "" {
 				dialog.ShowError(
 					errors.New("Не выбрана группа!"),
 					w,
 				)
 			}
 		} else {
-			DB.AddStudent(DB.Db, w, name, phone, selectedGroupId)
+			DB.AddStudent(DB.Db, w, name, gender, studentCard, phone, selectedGroupId)
 		}
 		if selectedListGroupId == 0 {
 			DB.ReadGroup(DB.Db)
@@ -176,8 +197,11 @@ func App() fyne.Window {
 			widget.NewLabel("Добавить ученика"),
 			widget.NewLabel("ФИО"),
 			entryName,
+			widget.NewLabel("Студенческий билет"),
+			entryStudentCard,
 			widget.NewLabel("Номер телефона"),
 			entryPhone,
+			selectGender,
 			selectGroup,
 			buttonComfirmStudent,
 		), w)
@@ -281,6 +305,8 @@ func App() fyne.Window {
 		widget.NewCard("", "", container.NewVBox(
 			ListId,
 			ListName,
+			ListGender,
+			ListStudentCard,
 			ListPhone,
 		)),
 	)

@@ -19,7 +19,7 @@ var ArrGroups []model.Group
 var AnswerStudents = widget.NewLabel("")
 var AnswerGroups = widget.NewLabel("")
 
-func AddStudent(db *sql.DB, w fyne.Window, name, phone string, groupId int) {
+func AddStudent(db *sql.DB, w fyne.Window, name, gender, studentCard, phone string, groupId int) {
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -28,7 +28,7 @@ func AddStudent(db *sql.DB, w fyne.Window, name, phone string, groupId int) {
 		panic(err)
 	}
 
-	query := "INSERT INTO Student (FullName, Phone, GroupId) VALUES (@Name, @Phone, @GroupId); select isNull(SCOPE_IDENTITY(), -1);"
+	query := "INSERT INTO Student (FullName, Gender, StudentCard, Phone, GroupId) VALUES (@Name, @Gender, @StudentCard, @Phone, @GroupId); select isNull(SCOPE_IDENTITY(), -1);"
 	if groupId == 0 {
 		dialog.ShowError(
 			errors.New("Не выбрана группа!"),
@@ -44,6 +44,8 @@ func AddStudent(db *sql.DB, w fyne.Window, name, phone string, groupId int) {
 		rows.QueryRowContext(
 			ctx,
 			sql.Named("Name", name),
+			sql.Named("Gender", gender),
+			sql.Named("StudentCard", studentCard),
 			sql.Named("Phone", phone),
 			sql.Named("GroupId", groupId))
 		ReadStudents(db)
@@ -74,7 +76,7 @@ func AddGroup(db *sql.DB, group string) {
 
 func ReadStudents(db *sql.DB) []model.Student {
 	var id int
-	var name, phone string
+	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
 	ctx := context.Background()
@@ -87,16 +89,16 @@ func ReadStudents(db *sql.DB) []model.Student {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Id, FullName, Phone FROM Student"
+	query := "SELECT Id, FullName, Gender, StudentCard, Phone FROM Student"
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Phone = id, name, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
@@ -108,7 +110,7 @@ func ReadStudents(db *sql.DB) []model.Student {
 
 func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
 	var id int
-	var name, phone string
+	var name, gender, studentCard, phone string
 	var st model.Student
 	ArrStudents = nil
 	ctx := context.Background()
@@ -121,16 +123,16 @@ func ReadSelectedGroup(db *sql.DB, groupId int) []model.Student {
 
 	AnswerStudents.Text = ""
 	count := 0
-	query := "SELECT Student.Id, FullName, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
+	query := "SELECT Student.Id, FullName, Gender, StudentCard, Phone FROM Student JOIN StudyGroup ON Student.GroupId = StudyGroup.Id WHERE StudyGroup.Id = @Group"
 	rows, err := db.QueryContext(ctx, query, sql.Named("Group", groupId))
 	if err != nil {
 		log.Fatal(err)
 	}
 	for rows.Next() {
-		if err := rows.Scan(&id, &name, &phone); err != nil {
+		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone); err != nil {
 			log.Fatal(err)
 		}
-		st.Id, st.Name, st.Phone = id, name, phone
+		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone = id, name, gender, studentCard, phone
 		ArrStudents = append(ArrStudents, st)
 		count++
 	}
