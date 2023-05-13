@@ -259,9 +259,13 @@ func App() fyne.Window {
 	buttonConfirmEditStudent := widget.NewButton("Изменить", func() {
 		DB.UpdateStudent(DB.Db, selectedListStudentId, entryName.Text, selectedGender, entryStudentCard.Text,
 			entryPhone.Text, selectedGroupId)
-		if selectedGroupId != 0 {
-			DB.ReadSelectedGroup(DB.Db, selectedGroupId)
+		if selectedListGroupId != 0 {
+			fmt.Println("selected")
+			fmt.Println(selectedListGroupId)
+			DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
 		} else {
+			fmt.Println("all")
+			fmt.Println(selectedListGroupId)
 			DB.ReadStudents(DB.Db)
 		}
 		listStudents.Refresh()
@@ -316,6 +320,7 @@ func App() fyne.Window {
 		selectGroup.Refresh()
 		listGroups.Refresh()
 		selectedListGroupId = 0
+		selectedGroupId = 0
 	})
 
 	WindowEditGroup := dialog.NewCustom("Изменить группу", "Закрыть",
@@ -346,7 +351,6 @@ func App() fyne.Window {
 			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
 		}
 		listStudents.Refresh()
-		selectedListStudentId = 0
 	})
 	btnFemale := widget.NewButton("Показать студентов женского пола", func() {
 		if selectedListGroupId == 0 {
@@ -355,7 +359,6 @@ func App() fyne.Window {
 			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
 		}
 		listStudents.Refresh()
-		selectedListStudentId = 0
 	})
 
 	labelStudentCardSearch := widget.NewLabel("Поиск по студенческому билету")
