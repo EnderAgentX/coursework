@@ -180,7 +180,7 @@ func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
 	var id, groupId int
 	var name, gender, studentCard, phone string
 	var st model.Student
-	ArrStudents = nil
+
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -196,7 +196,11 @@ func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for rows.Next() {
+		if count == 0 {
+			ArrStudents = nil
+		}
 		if err := rows.Scan(&id, &name, &gender, &studentCard, &phone, &groupId); err != nil {
 			log.Fatal(err)
 		}
@@ -206,7 +210,6 @@ func CardSearch(db *sql.DB, cardSearch string) ([]model.Student, int) {
 	}
 	fmt.Printf("Read %d row(s) successfully.\n", count)
 	defer rows.Close()
-
 	return ArrStudents, count
 }
 

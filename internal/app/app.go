@@ -65,12 +65,6 @@ func App() fyne.Window {
 		ListPhone.Refresh()
 		ListGroup.Refresh()
 	}
-	listGroups.OnSelected = func(idList widget.ListItemID) {
-		selectedListGroupId = DB.ArrGroups[idList].Id
-		DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
-		listStudents.UnselectAll()
-		listStudents.Refresh()
-	}
 
 	scrStudents := container.NewVScroll(listStudents)
 	scrGroups := container.NewVScroll(listGroups)
@@ -190,7 +184,6 @@ func App() fyne.Window {
 			selectGroup.Refresh()
 		}
 		scrStudents.Refresh()
-		selectedListGroupId = 0
 	})
 
 	WindowAddStudent := dialog.NewCustom("Добавить студента", "Закрыть",
@@ -343,31 +336,36 @@ func App() fyne.Window {
 		WindowEditGroup.Show()
 	})
 
-	/*
-		btnMale := widget.NewButton("Показать студентов мужского пола", func() {
-			fmt.Println(selectedGroupId)
+	var selectedGenderMenu string
+
+	selGenderArrMenu := []string{"Все", "Мужской", "Женский"}
+	selectGenderMenu := widget.NewSelect(selGenderArrMenu, func(s string) {
+		selectedGenderMenu = s
+		if selectedGenderMenu == "Все" {
+			if selectedListGroupId == 0 {
+				DB.ReadStudents(DB.Db)
+			} else {
+				DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
+			}
+			listStudents.Refresh()
+
+		} else if selectedGenderMenu == "Мужской" {
 			if selectedListGroupId == 0 {
 				DB.ReadStudentsGender(DB.Db, "Мужской")
 			} else {
 				DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
 			}
 			listStudents.Refresh()
-		})
-		btnFemale := widget.NewButton("Показать студентов женского пола", func() {
+		} else if selectedGenderMenu == "Женский" {
 			if selectedListGroupId == 0 {
 				DB.ReadStudentsGender(DB.Db, "Женский")
 			} else {
 				DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
 			}
 			listStudents.Refresh()
-		})
-	*/
-
-	selGenderArrMenu := []string{"Все", "Мужской", "Женский"}
-	selectGenderMenu := widget.NewSelect(selGenderArrMenu, func(s string) {
-		fmt.Println(s)
-		selectedGender = s
+		}
 	})
+	selectGenderMenu.SetSelectedIndex(0)
 
 	selectGenderMenu.PlaceHolder = "Пол"
 
@@ -389,7 +387,10 @@ func App() fyne.Window {
 					errors.New("Студенты не найдены!"),
 					w,
 				)
+				//selectGenderMenu.SetSelected(selectGenderMenu.Selected)
 			} else {
+				listStudents.Refresh()
+				listStudents.UnselectAll()
 				listStudents.Select(0)
 			}
 			listStudents.Refresh()
@@ -416,7 +417,16 @@ func App() fyne.Window {
 		ListPhone.Refresh()
 		ListGroup.Refresh()
 		listStudents.Refresh()
+		selectGenderMenu.SetSelected("Все")
 	})
+
+	listGroups.OnSelected = func(idList widget.ListItemID) {
+		selectedListGroupId = DB.ArrGroups[idList].Id
+		DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
+		selectGenderMenu.SetSelected(selectGenderMenu.Selected)
+		listStudents.UnselectAll()
+		listStudents.Refresh()
+	}
 
 	boxActions := container.NewVBox(
 		widget.NewCard("Действия", "", nil),
