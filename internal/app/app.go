@@ -343,25 +343,37 @@ func App() fyne.Window {
 		WindowEditGroup.Show()
 	})
 
-	btnMale := widget.NewButton("Показать студентов мужского пола", func() {
-		fmt.Println(selectedGroupId)
-		if selectedListGroupId == 0 {
-			DB.ReadStudentsGender(DB.Db, "Мужской")
-		} else {
-			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
-		}
-		listStudents.Refresh()
-	})
-	btnFemale := widget.NewButton("Показать студентов женского пола", func() {
-		if selectedListGroupId == 0 {
-			DB.ReadStudentsGender(DB.Db, "Женский")
-		} else {
-			DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
-		}
-		listStudents.Refresh()
+	/*
+		btnMale := widget.NewButton("Показать студентов мужского пола", func() {
+			fmt.Println(selectedGroupId)
+			if selectedListGroupId == 0 {
+				DB.ReadStudentsGender(DB.Db, "Мужской")
+			} else {
+				DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Мужской")
+			}
+			listStudents.Refresh()
+		})
+		btnFemale := widget.NewButton("Показать студентов женского пола", func() {
+			if selectedListGroupId == 0 {
+				DB.ReadStudentsGender(DB.Db, "Женский")
+			} else {
+				DB.ReadSelectedGroupGender(DB.Db, selectedListGroupId, "Женский")
+			}
+			listStudents.Refresh()
+		})
+	*/
+
+	selGenderArrMenu := []string{"Все", "Мужской", "Женский"}
+	selectGenderMenu := widget.NewSelect(selGenderArrMenu, func(s string) {
+		fmt.Println(s)
+		selectedGender = s
 	})
 
-	labelStudentCardSearch := widget.NewLabel("Поиск по студенческому билету")
+	selectGenderMenu.PlaceHolder = "Пол"
+
+	labelGenderMenu := widget.NewLabel("Пол:")
+
+	labelStudentCardSearch := widget.NewLabel("Студенческий билет:")
 	entryStudentCardSearch := widget.NewEntry()
 	btnSearch := widget.NewButton("Поиск", func() {
 		if entryStudentCardSearch.Text == "" {
@@ -384,6 +396,7 @@ func App() fyne.Window {
 		}
 
 	})
+
 	btnCancel := widget.NewButton("Отмена", func() {
 		listGroups.UnselectAll()
 		DB.ReadStudents(DB.Db)
@@ -394,6 +407,7 @@ func App() fyne.Window {
 		ListGroup.Text = "Группа: "
 		entryStudentCardSearch.Text = ""
 		selectedListStudentId = 0
+		selectedListGroupId = 0
 		selectGroup.ClearSelected()
 		entryStudentCardSearch.Refresh()
 		ListName.Refresh()
@@ -414,22 +428,18 @@ func App() fyne.Window {
 						btnAddStudent,
 						btnEditStudent,
 						btnDelStudent,
+						labelStudentCardSearch,
+						btnCancel,
+						labelGenderMenu,
 					),
 					container.NewVBox(
 						btnAddGroup,
 						btnEditGroup,
 						btnDelGroup,
+						entryStudentCardSearch,
+						btnSearch,
+						selectGenderMenu,
 					),
-				),
-				container.NewVBox(
-					btnMale,
-					btnFemale,
-					labelStudentCardSearch,
-				),
-				entryStudentCardSearch,
-				container.NewHBox(
-					btnSearch,
-					btnCancel,
 				),
 			),
 		)),
