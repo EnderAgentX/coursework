@@ -410,6 +410,8 @@ func App() fyne.Window {
 		selectedListStudentId = 0
 		selectedListGroupId = 0
 		selectGroup.ClearSelected()
+		listStudents.UnselectAll()
+		listGroups.UnselectAll()
 		entryStudentCardSearch.Refresh()
 		ListName.Refresh()
 		ListGender.Refresh()
