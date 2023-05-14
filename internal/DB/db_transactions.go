@@ -52,7 +52,7 @@ func AddStudent(db *sql.DB, w fyne.Window, name, gender, studentCard, phone stri
 	}
 }
 
-func AddGroup(db *sql.DB, group string) {
+func AddGroup(db *sql.DB, group string) int {
 	ctx := context.Background()
 
 	// Проверка работает ли база
@@ -61,17 +61,63 @@ func AddGroup(db *sql.DB, group string) {
 		panic(err)
 	}
 
-	query := "INSERT INTO StudyGroup (GroupName) VALUES (@GroupName); select isNull(SCOPE_IDENTITY(), -1);"
-	rows, err := db.Prepare(query)
+	query2 := "SELECT COUNT(GroupName) FROM StudyGroup WHERE GroupName = @GroupName"
+	rows2, err := db.QueryContext(ctx, query2, sql.Named("GroupName", group))
+	nGroups := 0
+	for rows2.Next() {
+
+		if err := rows2.Scan(&nGroups); err != nil {
+			log.Fatal(err)
+		}
+
+	}
+	fmt.Println(nGroups)
+
+	if nGroups == 0 {
+		query := "INSERT INTO StudyGroup (GroupName) VALUES (@GroupName); select isNull(SCOPE_IDENTITY(), -1);"
+		rows, err := db.Prepare(query)
+		if err != nil {
+			panic(err)
+		}
+		defer rows.Close()
+		rows.QueryRowContext(
+			ctx,
+			sql.Named("GroupName", group),
+		)
+		ReadGroup(db)
+	} else {
+		return 0
+	}
+	return 1
+}
+
+func StudentCardDuplicate(db *sql.DB, card string) int {
+	ctx := context.Background()
+
+	// Проверка работает ли база
+	err := db.PingContext(ctx)
 	if err != nil {
 		panic(err)
 	}
-	defer rows.Close()
-	rows.QueryRowContext(
-		ctx,
-		sql.Named("GroupName", group),
-	)
-	ReadGroup(db)
+
+	query2 := "SELECT COUNT(StudentCard) FROM Student WHERE StudentCard = @StudentCard"
+	rows2, err := db.QueryContext(ctx, query2, sql.Named("StudentCard", card))
+	nCard := 0
+	for rows2.Next() {
+
+		if err := rows2.Scan(&nCard); err != nil {
+			log.Fatal(err)
+		}
+
+	}
+	fmt.Println(nCard)
+
+	if nCard == 0 {
+		return 1
+	} else {
+		return 0
+	}
+
 }
 
 func ReadStudents(db *sql.DB) []model.Student {

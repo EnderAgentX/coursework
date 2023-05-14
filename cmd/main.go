@@ -1,14 +1,14 @@
 package main
 
 import (
+	"github.com/EnderAgentX/coursework/internal/App"
 	"github.com/EnderAgentX/coursework/internal/DB"
-	"github.com/EnderAgentX/coursework/internal/app"
 	"os"
 )
 
 func main() {
 	os.Setenv("FYNE_THEME", "light")
-	w := app.App()
+	w := App.App()
 	DB.DbSettings()
 	DB.ReadStudents(DB.Db)
 	DB.ReadGroup(DB.Db)

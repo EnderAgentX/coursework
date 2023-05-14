@@ -1,4 +1,4 @@
-package app
+package App
 
 import (
 	"errors"
@@ -17,7 +17,6 @@ func App() fyne.Window {
 	w := myApp.NewWindow("Курсовая работа")
 	w.Resize(fyne.NewSize(1200, 600))
 	w.CenterOnScreen()
-
 	listStudents := widget.NewList(
 		func() int {
 			return len(DB.ArrStudents)
@@ -170,7 +169,15 @@ func App() fyne.Window {
 				)
 			}
 		} else {
-			DB.AddStudent(DB.Db, w, name, gender, studentCard, phone, selectedGroupId)
+			flag := DB.StudentCardDuplicate(DB.Db, studentCard)
+			if flag == 0 {
+				dialog.ShowError(
+					errors.New("Этот номер студенческого билета занят!"),
+					w,
+				)
+			} else {
+				DB.AddStudent(DB.Db, w, name, gender, studentCard, phone, selectedGroupId)
+			}
 		}
 		if selectedListGroupId == 0 {
 			DB.ReadGroup(DB.Db)
@@ -226,13 +233,20 @@ func App() fyne.Window {
 				w,
 			)
 		} else {
-			DB.AddGroup(DB.Db, name)
-			selectGroup.Options = append(selectGroup.Options, name)
-			selectGroup.SetSelected(selectGroup.Options[0])
-			selectGroup.ClearSelected()
-			selectGroup.OnChanged(selectGroup.PlaceHolder)
-			selectGroup.Show()
-			scrGroups.Refresh()
+			flag := DB.AddGroup(DB.Db, name)
+			if flag == 0 {
+				dialog.ShowError(
+					errors.New("Такая группа уже существует!"),
+					w,
+				)
+			} else {
+				selectGroup.Options = append(selectGroup.Options, name)
+				selectGroup.SetSelected(selectGroup.Options[0])
+				selectGroup.ClearSelected()
+				selectGroup.OnChanged(selectGroup.PlaceHolder)
+				selectGroup.Show()
+				scrGroups.Refresh()
+			}
 		}
 	})
 
@@ -250,21 +264,50 @@ func App() fyne.Window {
 	})
 
 	buttonConfirmEditStudent := widget.NewButton("Изменить", func() {
-		DB.UpdateStudent(DB.Db, selectedListStudentId, entryName.Text, selectedGender, entryStudentCard.Text,
-			entryPhone.Text, selectedGroupId)
-		if selectedListGroupId != 0 {
-			fmt.Println("selected")
-			fmt.Println(selectedListGroupId)
-			DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
+		flag := DB.StudentCardDuplicate(DB.Db, entryStudentCard.Text)
+		if flag == 0 {
+			dialog.ShowError(
+				errors.New("Этот номер студенческого билета занят!"),
+				w,
+			)
 		} else {
-			fmt.Println("all")
-			fmt.Println(selectedListGroupId)
-			DB.ReadStudents(DB.Db)
+			DB.UpdateStudent(DB.Db, selectedListStudentId, entryName.Text, selectedGender, entryStudentCard.Text,
+				entryPhone.Text, selectedGroupId)
+
+			if selectedListGroupId != 0 {
+				fmt.Println("selected")
+				fmt.Println(selectedListGroupId)
+				DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
+			} else {
+				fmt.Println("all")
+				fmt.Println(selectedListGroupId)
+				DB.ReadStudents(DB.Db)
+			}
+			listStudents.Refresh()
+			scrStudents.Refresh()
+			if entryName.Text != "" {
+				ListName.Text = "Имя: " + entryName.Text
+			}
+			if selectedGender != "" {
+				ListGender.Text = "Пол: " + selectedGender
+			}
+			if entryStudentCard.Text != "" {
+				ListStudentCard.Text = "Студенческий билет: " + entryStudentCard.Text
+			}
+			if entryPhone.Text != "" {
+				ListPhone.Text = "Телефон: " + entryPhone.Text
+			}
+			if DB.GetGroupName(DB.Db, selectedGroupId) != "" {
+				ListGroup.Text = "Группа: " + DB.GetGroupName(DB.Db, selectedGroupId)
+			}
+			ListName.Refresh()
+			ListGender.Refresh()
+			ListStudentCard.Refresh()
+			ListPhone.Refresh()
+			ListGroup.Refresh()
+			selectedGroupId = 0
+
 		}
-		listStudents.Refresh()
-		scrStudents.Refresh()
-		selectedGroupId = 0
-		selectedListGroupId = 0
 	})
 
 	WindowEditStudent := dialog.NewCustom("Изменить студента", "Закрыть",
