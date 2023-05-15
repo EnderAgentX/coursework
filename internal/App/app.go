@@ -48,6 +48,7 @@ func App() fyne.Window {
 	var st model.Student
 	var selectedListStudentId int
 	var selectedListGroupId int
+	var studentListId int
 	listStudents.OnSelected = func(idList widget.ListItemID) {
 		st.Id, st.Name, st.Gender, st.StudentCard, st.Phone, st.GroupId =
 			DB.ArrStudents[idList].Id, DB.ArrStudents[idList].Name, DB.ArrStudents[idList].Gender,
@@ -58,6 +59,7 @@ func App() fyne.Window {
 		ListPhone.Text = "Телефон: " + st.Phone
 		ListGroup.Text = "Группа: " + DB.GetGroupName(DB.Db, st.GroupId)
 		selectedListStudentId = DB.ArrStudents[idList].Id
+		studentListId = idList
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
@@ -90,7 +92,8 @@ func App() fyne.Window {
 		ListPhone.Text = "Телефон: "
 		ListPhone.Text = "Группа: "
 		listStudents.UnselectAll()
-		selectedListStudentId = 0
+		listStudents.Select(studentListId)
+		fmt.Println(studentListId)
 		ListName.Refresh()
 		ListGender.Refresh()
 		ListStudentCard.Refresh()
@@ -275,14 +278,12 @@ func App() fyne.Window {
 				entryPhone.Text, selectedGroupId)
 
 			if selectedListGroupId != 0 {
-				fmt.Println("selected")
-				fmt.Println(selectedListGroupId)
 				DB.ReadSelectedGroup(DB.Db, selectedListGroupId)
-			} else {
-				fmt.Println("all")
-				fmt.Println(selectedListGroupId)
-				DB.ReadStudents(DB.Db)
 			}
+			//	fmt.Println("all")
+			//	fmt.Println(selectedListGroupId)
+			//	DB.ReadStudents(DB.Db)
+			//}
 			listStudents.Refresh()
 			scrStudents.Refresh()
 			if entryName.Text != "" {
@@ -434,7 +435,9 @@ func App() fyne.Window {
 			} else {
 				listStudents.Refresh()
 				listStudents.UnselectAll()
+				listGroups.UnselectAll()
 				listStudents.Select(0)
+				selectedListGroupId = 0
 			}
 			listStudents.Refresh()
 		}

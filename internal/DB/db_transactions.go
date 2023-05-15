@@ -536,5 +536,12 @@ func UpdateStudent(db *sql.DB, studentId int, fullName, gender, studentCard, pho
 		log.Fatal(err)
 	}
 
+	for i := 0; i < len(ArrStudents); i++ {
+		if ArrStudents[i].Id == studentId {
+			ArrStudents[i].Name, ArrStudents[i].Gender, ArrStudents[i].StudentCard, ArrStudents[i].Phone, ArrStudents[i].GroupId =
+				fullNameDB, genderDB, studentCardDB, phoneDB, groupId
+		}
+	}
+	fmt.Println(ArrStudents)
 	return ArrStudents
 }
